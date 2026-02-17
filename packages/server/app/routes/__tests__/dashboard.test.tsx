@@ -318,11 +318,26 @@ describe("Dashboard route", () => {
                     {
                         path: "/resources/countrymap",
                         loader: () => {
-                            return { countsByCountry: [] };
+                            return {
+                                countsByCountry: [],
+                                cityMarkers: [],
+                            };
                         },
                     },
                     {
                         path: "/resources/events",
+                        loader: () => {
+                            return { countsByProperty: [] };
+                        },
+                    },
+                    {
+                        path: "/resources/region",
+                        loader: () => {
+                            return { countsByProperty: [] };
+                        },
+                    },
+                    {
+                        path: "/resources/city",
                         loader: () => {
                             return { countsByProperty: [] };
                         },
@@ -494,11 +509,26 @@ describe("Dashboard route", () => {
                     {
                         path: "/resources/countrymap",
                         loader: () => {
-                            return { countsByCountry: [] };
+                            return {
+                                countsByCountry: [],
+                                cityMarkers: [],
+                            };
                         },
                     },
                     {
                         path: "/resources/events",
+                        loader: () => {
+                            return { countsByProperty: [] };
+                        },
+                    },
+                    {
+                        path: "/resources/region",
+                        loader: () => {
+                            return { countsByProperty: [] };
+                        },
+                    },
+                    {
+                        path: "/resources/city",
                         loader: () => {
                             return { countsByProperty: [] };
                         },

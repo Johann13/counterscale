@@ -30,6 +30,8 @@ import { PathsCard } from "./resources.paths";
 import { BrowserCard } from "./resources.browser";
 import { BrowserVersionCard } from "./resources.browserversion";
 import { CountryCard } from "./resources.country";
+import { RegionCard } from "./resources.region";
+import { CityCard } from "./resources.city";
 import { DeviceCard } from "./resources.device";
 import { UtmSourceCard } from "./resources.utm-source";
 import { UtmMediumCard } from "./resources.utm-medium";
@@ -176,6 +178,15 @@ export default function Dashboard() {
     const handleFilterDelete = (key: string) => {
         setSearchParams((prev) => {
             prev.delete(key);
+            // Cascade: removing country also clears region and city
+            if (key === "country") {
+                prev.delete("region");
+                prev.delete("city");
+            }
+            // Cascade: removing region also clears city
+            if (key === "region") {
+                prev.delete("city");
+            }
             return prev;
         });
     };
@@ -269,6 +280,38 @@ export default function Dashboard() {
                         timezone={userTimezone}
                     />
                 </div>
+                <div className="w-full mb-4">
+                    <WorldMapCard
+                        siteId={data.siteId}
+                        interval={data.interval}
+                        filters={data.filters}
+                        onFilterChange={handleFilterChange}
+                        timezone={userTimezone}
+                    />
+                </div>
+                <div className="grid md:grid-cols-3 gap-4 mb-4">
+                    <CountryCard
+                        siteId={data.siteId}
+                        interval={data.interval}
+                        filters={data.filters}
+                        onFilterChange={handleFilterChange}
+                        timezone={userTimezone}
+                    />
+                    <RegionCard
+                        siteId={data.siteId}
+                        interval={data.interval}
+                        filters={data.filters}
+                        onFilterChange={handleFilterChange}
+                        timezone={userTimezone}
+                    />
+                    <CityCard
+                        siteId={data.siteId}
+                        interval={data.interval}
+                        filters={data.filters}
+                        onFilterChange={handleFilterChange}
+                        timezone={userTimezone}
+                    />
+                </div>
                 <div className="grid md:grid-cols-3 gap-4 mb-4">
                     {data.filters && data.filters.browserName ? (
                         <BrowserVersionCard
@@ -287,16 +330,14 @@ export default function Dashboard() {
                             timezone={userTimezone}
                         />
                     )}
-
-                    <CountryCard
+                    <DeviceCard
                         siteId={data.siteId}
                         interval={data.interval}
                         filters={data.filters}
                         onFilterChange={handleFilterChange}
                         timezone={userTimezone}
                     />
-
-                    <DeviceCard
+                    <EventsCard
                         siteId={data.siteId}
                         interval={data.interval}
                         filters={data.filters}
@@ -312,7 +353,6 @@ export default function Dashboard() {
                         onFilterChange={handleFilterChange}
                         timezone={userTimezone}
                     />
-
                     <UtmMediumCard
                         siteId={data.siteId}
                         interval={data.interval}
@@ -320,7 +360,6 @@ export default function Dashboard() {
                         onFilterChange={handleFilterChange}
                         timezone={userTimezone}
                     />
-
                     <UtmCampaignCard
                         siteId={data.siteId}
                         interval={data.interval}
@@ -337,26 +376,7 @@ export default function Dashboard() {
                         onFilterChange={handleFilterChange}
                         timezone={userTimezone}
                     />
-
                     <UtmContentCard
-                        siteId={data.siteId}
-                        interval={data.interval}
-                        filters={data.filters}
-                        onFilterChange={handleFilterChange}
-                        timezone={userTimezone}
-                    />
-                </div>
-                <div className="w-full mb-4">
-                    <WorldMapCard
-                        siteId={data.siteId}
-                        interval={data.interval}
-                        filters={data.filters}
-                        onFilterChange={handleFilterChange}
-                        timezone={userTimezone}
-                    />
-                </div>
-                <div className="grid md:grid-cols-2 gap-4 mb-4">
-                    <EventsCard
                         siteId={data.siteId}
                         interval={data.interval}
                         filters={data.filters}
