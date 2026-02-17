@@ -18,6 +18,8 @@ interface PaginatedTableCardProps {
     timezone?: string;
     labelFormatter?: (label: string) => string;
     headerExtra?: ReactNode;
+    renderAfterRow?: (key: string) => ReactNode;
+    rowIcon?: (key: string) => ReactNode;
 }
 
 const PaginatedTableCard = ({
@@ -32,6 +34,8 @@ const PaginatedTableCard = ({
     timezone,
     labelFormatter,
     headerExtra,
+    renderAfterRow,
+    rowIcon,
 }: PaginatedTableCardProps) => {
     const countsByProperty = dataFetcher.data?.countsByProperty || [];
     const [page, setPage] = useState(1);
@@ -73,6 +77,8 @@ const PaginatedTableCard = ({
                         columnHeaders={columnHeaders}
                         onClick={onClick}
                         labelFormatter={labelFormatter}
+                        renderAfterRow={renderAfterRow}
+                        rowIcon={rowIcon}
                     />
                     <PaginationButtons
                         page={page}

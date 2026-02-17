@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { ExternalLink } from "lucide-react";
 import {
     Table,
@@ -27,11 +28,15 @@ export default function TableCard({
     columnHeaders,
     onClick,
     labelFormatter,
+    renderAfterRow,
+    rowIcon,
 }: {
     countByProperty: CountByProperty;
     columnHeaders: string[];
     onClick?: (key: string) => void;
     labelFormatter?: (label: string) => string;
+    renderAfterRow?: (key: string) => ReactNode;
+    rowIcon?: (key: string) => ReactNode;
 }) {
     const barChartPercentages = calculateCountPercentages(countByProperty);
 
@@ -75,78 +80,88 @@ export default function TableCard({
                             ? labelFormatter(label)
                             : label;
 
+                    const icon = rowIcon ? rowIcon(key as string) : null;
+
                     return (
-                        <TableRow
-                            key={key}
-                            className={`group [&_td]:last:rounded-b-md ${gridCols}`}
-                            width={barChartPercentages[index]}
-                        >
-                            <TableCell className="overflow-hidden font-medium min-w-48 whitespace-normal relative flex items-center justify-start gap-2">
-                                {/^https?:\/\//.test(label) ? (
-                                    <>
-                                        <img
-                                            src={`/favicon?url=${encodeURIComponent(label)}`}
-                                            alt="Favicon"
-                                            className="w-5 h-5 mr-1 bg-white p-0.5 rounded-full"
-                                            onError={(e) => {
-                                                // Fallback to external link icon if favicon fails to load
-                                                const target =
-                                                    e.target as HTMLImageElement;
-                                                target.style.display = "none";
-                                            }}
-                                        />
-                                        {onClick ? (
-                                            <button
-                                                onClick={() =>
-                                                    onClick(key as string)
-                                                }
-                                                className="hover:underline select-text text-left truncate"
+                        <div key={key as string}>
+                            <TableRow
+                                className={`group [&_td]:last:rounded-b-md ${gridCols}`}
+                                width={barChartPercentages[index]}
+                            >
+                                <TableCell className="overflow-hidden font-medium min-w-48 whitespace-normal relative flex items-center justify-start gap-2">
+                                    {icon}
+                                    {/^https?:\/\//.test(label) ? (
+                                        <>
+                                            <img
+                                                src={`/favicon?url=${encodeURIComponent(label)}`}
+                                                alt="Favicon"
+                                                className="w-5 h-5 mr-1 bg-white p-0.5 rounded-full"
+                                                onError={(e) => {
+                                                    // Fallback to external link icon if favicon fails to load
+                                                    const target =
+                                                        e.target as HTMLImageElement;
+                                                    target.style.display =
+                                                        "none";
+                                                }}
+                                            />
+                                            {onClick ? (
+                                                <button
+                                                    onClick={() =>
+                                                        onClick(key as string)
+                                                    }
+                                                    className="hover:underline select-text text-left truncate"
+                                                >
+                                                    {formattedLabel}
+                                                </button>
+                                            ) : (
+                                                formattedLabel
+                                            )}
+                                            <a
+                                                href={label}
+                                                target={"_blank"}
+                                                rel="noreferrer"
+                                                aria-hidden="true"
+                                                className="inline whitespace-nowrap ml-1"
                                             >
-                                                {formattedLabel}
-                                            </button>
-                                        ) : (
-                                            formattedLabel
-                                        )}
-                                        <a
-                                            href={label}
-                                            target={"_blank"}
-                                            rel="noreferrer"
-                                            aria-hidden="true"
-                                            className="inline whitespace-nowrap ml-1"
-                                        >
-                                            <ExternalLink size={16} />
-                                        </a>
-                                    </>
-                                ) : (
-                                    <>
-                                        {onClick ? (
-                                            <button
-                                                onClick={() =>
-                                                    onClick(key as string)
-                                                }
-                                                className="hover:underline select-text text-left truncate"
-                                            >
-                                                {formattedLabel}
-                                            </button>
-                                        ) : (
-                                            formattedLabel
-                                        )}
-                                    </>
-                                )}
-                            </TableCell>
-
-                            <TableCell className="text-right min-w-16">
-                                {countFormatter.format(parseInt(item[1], 10))}
-                            </TableCell>
-
-                            {item.length > 2 && item[2] !== undefined && (
-                                <TableCell className="text-right min-w-16">
-                                    {countFormatter.format(
-                                        parseInt(item[2], 10),
+                                                <ExternalLink size={16} />
+                                            </a>
+                                        </>
+                                    ) : (
+                                        <>
+                                            {onClick ? (
+                                                <button
+                                                    onClick={() =>
+                                                        onClick(key as string)
+                                                    }
+                                                    className="hover:underline select-text text-left truncate"
+                                                >
+                                                    {formattedLabel}
+                                                </button>
+                                            ) : (
+                                                formattedLabel
+                                            )}
+                                        </>
                                     )}
                                 </TableCell>
-                            )}
-                        </TableRow>
+
+                                <TableCell className="text-right min-w-16">
+                                    {countFormatter.format(
+                                        parseInt(item[1], 10),
+                                    )}
+                                </TableCell>
+
+                                {item.length > 2 && item[2] !== undefined && (
+                                    <TableCell className="text-right min-w-16">
+                                        {countFormatter.format(
+                                            parseInt(item[2], 10),
+                                        )}
+                                    </TableCell>
+                                )}
+                            </TableRow>
+                            {renderAfterRow
+                                ? renderAfterRow(key as string)
+                                : null}
+                        </div>
                     );
                 })}
             </TableBody>
