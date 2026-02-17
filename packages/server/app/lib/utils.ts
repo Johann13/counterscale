@@ -32,6 +32,7 @@ interface SearchFilters {
     utmCampaign?: string;
     utmTerm?: string;
     utmContent?: string;
+    eventName?: string;
 }
 
 export function getFiltersFromSearchParams(searchParams: URLSearchParams) {
@@ -69,6 +70,9 @@ export function getFiltersFromSearchParams(searchParams: URLSearchParams) {
     }
     if (searchParams.has("utmContent")) {
         filters.utmContent = searchParams.get("utmContent") || "";
+    }
+    if (searchParams.has("eventName")) {
+        filters.eventName = searchParams.get("eventName") || "";
     }
 
     return filters;

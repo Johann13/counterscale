@@ -1,6 +1,6 @@
 import type { ServerClient } from "./client";
 import { makeRequest } from "./request";
-import type { ServerTrackPageviewOpts } from "./types";
+import type { ServerTrackPageviewOpts, ServerTrackEventOpts } from "./types";
 import {
     getHostnameAndPath,
     getReferrer,
@@ -8,7 +8,7 @@ import {
     isLocalhostAddress,
     mergeUtmParams,
 } from "../shared/utils";
-import { buildCollectRequestParams } from "../shared/request";
+import { buildCollectRequestParams, buildCollectEventParams } from "../shared/request";
 import type { UtmParams } from "../shared/types";
 
 function getUtmParamsFromOpts(opts: ServerTrackPageviewOpts): UtmParams {
@@ -90,6 +90,66 @@ export async function trackPageview(
         referrer,
         utmParams,
         "1",
+    );
+
+    await makeRequest(client.reporterUrl, requestParams, client.timeout);
+}
+
+export async function trackEvent(
+    client: ServerClient,
+    opts: ServerTrackEventOpts,
+) {
+    if (!opts.url) {
+        throw new Error("url is required for server-side event tracking");
+    }
+    if (!opts.eventName) {
+        throw new Error("eventName is required for server-side event tracking");
+    }
+
+    let fullUrl: string;
+    try {
+        if (opts.url.startsWith("/")) {
+            if (!opts.hostname) {
+                throw new Error(
+                    "hostname is required when tracking relative URLs",
+                );
+            }
+            const protocol =
+                opts.hostname.startsWith("localhost") ||
+                opts.hostname.includes("127.0.0.1")
+                    ? "http://"
+                    : "https://";
+            fullUrl = `${protocol}${opts.hostname}${opts.url}`;
+        } else {
+            fullUrl = opts.url;
+        }
+
+        new URL(fullUrl);
+    } catch (error) {
+        if (
+            error instanceof Error &&
+            error.message.includes("hostname is required")
+        ) {
+            throw error;
+        }
+        throw new Error(`Invalid URL: ${opts.url}`);
+    }
+
+    const { hostname, path } = getHostnameAndPath(fullUrl);
+
+    if (
+        !client.reportOnLocalhost &&
+        isLocalhostAddress(new URL(fullUrl).hostname)
+    ) {
+        return;
+    }
+
+    const requestParams = buildCollectEventParams(
+        client.siteId,
+        hostname,
+        path,
+        opts.eventName,
+        opts.eventData,
     );
 
     await makeRequest(client.reporterUrl, requestParams, client.timeout);

@@ -32,6 +32,7 @@ function init() {
     const script = findReporterScript();
     const siteId = script?.getAttribute("data-site-id") || getLegacySiteId();
     const reportOnLocalhost = (script?.hasAttribute("data-report-localhost") && script?.getAttribute("data-report-localhost") !== "false") || false;
+    const autoClicksAttr = script?.hasAttribute("data-auto-clicks") && script?.getAttribute("data-auto-clicks") !== "false";
 
     const reporterUrl = script?.src.replace("tracker.js", "collect");
 
@@ -44,6 +45,7 @@ function init() {
         reportOnLocalhost,
         reporterUrl,
         autoTrackPageviews: true,
+        autoTrackClicks: autoClicksAttr || false,
     });
 }
 

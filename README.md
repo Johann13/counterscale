@@ -84,6 +84,14 @@ To start reporting website traffic from your web property, copy/paste the follow
 ></script>
 ```
 
+**Script Attributes**
+
+| Attribute | Description |
+|-----------|-------------|
+| `data-site-id` | **(required)** Your unique site identifier. |
+| `data-report-localhost` | Set to any value (or omit `="false"`) to enable tracking on localhost. |
+| `data-auto-clicks` | Enable automatic click tracking for `<a>`, `<button>`, and `[role="button"]` elements. Emits `click:link` and `click:button` events. |
+
 #### 2. Package/Module
 
 The Counterscale tracker is published as an npm module:
@@ -110,7 +118,17 @@ Counterscale.init({
 | `isInitialized()` | None | `boolean` | Checks if the Counterscale client has been initialized. Returns true if client exists, false otherwise. |
 | `getInitializedClient()` | None | `Client \| undefined` | Returns the initialized client instance or undefined if not initialized. |
 | `trackPageview(opts?)` | `TrackPageviewOpts?` | `void` | Tracks a pageview event. Requires client to be initialized first. Automatically detects URL and referrer if not provided. |
+| `trackEvent(name, opts?)` | `string, TrackEventOpts?` | `void` | Tracks a custom event. `name` is the event name (e.g. `"signup"`). `opts.data` is an optional string payload. |
 | `cleanup()` | None | `void` | Cleans up the client instance and removes event listeners. Sets global client to undefined. |
+
+**Init Options (`ClientOpts`)**
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `siteId` | `string` | — | **(required)** Your unique site identifier. |
+| `reporterUrl` | `string` | — | **(required)** URL of your deployed `/collect` endpoint. |
+| `reportOnLocalhost` | `boolean` | `false` | Enable tracking on localhost. |
+| `autoTrackPageviews` | `boolean` | `true` | Automatically track page views on navigation. |
+| `autoTrackClicks` | `boolean` | `false` | Automatically track clicks on `<a>`, `<button>`, and `[role="button"]` elements. |
 
 #### 3. Server-Side Module
 
@@ -140,6 +158,14 @@ await Counterscale.trackPageview({
     utmSource: "social",
     utmMedium: "twitter",
 });
+
+// Track a custom event
+await Counterscale.trackEvent({
+    url: "https://example.com/signup",
+    hostname: "example.com",
+    eventName: "signup",
+    eventData: "premium-plan", // optional
+});
 ```
 
 **Server Module Methods**
@@ -148,7 +174,8 @@ await Counterscale.trackPageview({
 | `init(opts)` | `ServerClientOpts` | `void` | Initializes the server-side tracker. |
 | `isInitialized()` | None | `boolean` | Checks if the tracker has been initialized. |
 | `getInitializedClient()` | None | `ServerClient \| undefined` | Returns the initialized server client instance. |
-| `trackPageview(opts)` | `TrackPageviewOpts` | `Promise<void>` | Tracks a pageview event. Requires explicit URL and hostname parameters. |
+| `trackPageview(opts)` | `ServerTrackPageviewOpts` | `Promise<void>` | Tracks a pageview event. Requires explicit URL and hostname parameters. |
+| `trackEvent(opts)` | `ServerTrackEventOpts` | `Promise<void>` | Tracks a custom event. Requires `url`, `eventName`, and optionally `eventData`, `hostname`, `userAgent`, `ip`. |
 | `cleanup()` | None | `void` | Cleans up the server client instance. |
 
 The server module is designed for backend applications and differs from the client-side version:
@@ -196,6 +223,52 @@ Counterscale.init({
 // ... when a pageview happens
 Counterscale.trackPageview();
 ```
+
+### Track Custom Events
+
+You can track custom events using `Counterscale.trackEvent()`:
+
+```typescript
+import * as Counterscale from "@counterscale/tracker";
+
+Counterscale.init({
+    siteId: "your-unique-site-id",
+    reporterUrl: "https://{subdomain-emitted-during-deploy}.workers.dev/collect",
+});
+
+// Track a custom event
+Counterscale.trackEvent("signup", { data: "premium-plan" });
+```
+
+Events are displayed separately from pageviews in the dashboard and do not inflate view/visitor/bounce metrics.
+
+### Auto-Click Tracking
+
+Counterscale can automatically track clicks on links, buttons, and elements with `role="button"`. Enable it via the script tag:
+
+```html
+<script
+    id="counterscale-script"
+    data-site-id="your-unique-site-id"
+    data-auto-clicks
+    src="https://{subdomain-emitted-during-deploy}.workers.dev/tracker.js"
+    defer
+></script>
+```
+
+Or via the module API:
+
+```typescript
+Counterscale.init({
+    siteId: "your-unique-site-id",
+    reporterUrl: "https://{subdomain-emitted-during-deploy}.workers.dev/collect",
+    autoTrackClicks: true,
+});
+```
+
+This emits:
+- `click:link` events for `<a>` elements (data = href)
+- `click:button` events for `<button>` and `[role="button"]` elements (data = text content, truncated to 150 chars)
 
 ### Custom Domains
 

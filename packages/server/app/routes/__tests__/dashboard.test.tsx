@@ -321,6 +321,12 @@ describe("Dashboard route", () => {
                             return { countsByCountry: [] };
                         },
                     },
+                    {
+                        path: "/resources/events",
+                        loader: () => {
+                            return { countsByProperty: [] };
+                        },
+                    },
                 ],
             },
         ]);
@@ -489,6 +495,12 @@ describe("Dashboard route", () => {
                         path: "/resources/countrymap",
                         loader: () => {
                             return { countsByCountry: [] };
+                        },
+                    },
+                    {
+                        path: "/resources/events",
+                        loader: () => {
+                            return { countsByProperty: [] };
                         },
                     },
                 ],

@@ -146,6 +146,9 @@ export function collectRequestHandler(
 
     const parsedUserAgent = new UAParser(userAgent);
 
+    // Detect if this is an event request (en param present and non-empty)
+    const isEventRequest = params.en !== undefined && params.en !== "";
+
     // Check if hit type parameter is provided in the request
     // If it is, use it to derive visit and bounce values; otherwise, calculate them using the If-Modified-Since header
     let isVisit = false;
@@ -153,27 +156,32 @@ export function collectRequestHandler(
     let nextLastModifiedDate: Date | undefined;
     let hits = 0;
 
-    // Get hit count from params or cache headers
-    if (params.ht !== undefined) {
-        // From params
+    if (isEventRequest) {
+        // Events don't participate in visitor/bounce tracking
+        isVisit = false;
+        bounceValue = 0;
+        nextLastModifiedDate = undefined;
+    } else if (params.ht !== undefined) {
+        // Get hit count from params
         hits = parseInt(params.ht, 10);
         if (isNaN(hits) || hits <= 0) hits = 1;
         if (hits > 3) hits = 3;
 
         // Don't set nextLastModifiedDate when ht is provided
         nextLastModifiedDate = undefined;
+
+        isVisit = hits === 1;
+        bounceValue = getBounceValue(hits);
     } else {
         // From cache headers
         const ifModifiedSince = request.headers.get("if-modified-since");
         const cacheResult = handleCacheHeaders(ifModifiedSince);
         hits = cacheResult.hits;
         nextLastModifiedDate = cacheResult.nextLastModifiedDate;
+
+        isVisit = hits === 1;
+        bounceValue = getBounceValue(hits);
     }
-
-    isVisit = hits === 1; // if first hit, it is a visit
-
-    // Get bounce value based on hit count
-    bounceValue = getBounceValue(hits);
 
     const browserVersion = maskBrowserVersion(
         parsedUserAgent.getBrowser().version,
@@ -199,6 +207,10 @@ export function collectRequestHandler(
         utmCampaign: params.uc,
         utmTerm: params.ut,
         utmContent: params.uco,
+        // Event fields
+        eventName: isEventRequest ? params.en : "",
+        eventData: isEventRequest ? (params.ed || "") : "",
+        isEvent: isEventRequest ? 1 : 0,
     };
 
     // NOTE: location is derived from Cloudflare-specific request properties
@@ -258,11 +270,14 @@ interface DataPoint {
     utmCampaign?: string;
     utmTerm?: string;
     utmContent?: string;
+    eventName?: string;
+    eventData?: string;
 
     // doubles
     newVisitor: number;
     newSession: number;
     bounce: number;
+    isEvent: number;
 }
 
 // NOTE: Cloudflare Analytics Engine has limits on total number of bytes, number of fields, etc.
@@ -290,8 +305,10 @@ export function writeDataPoint(
             data.utmCampaign || "", // blob13
             data.utmTerm || "", // blob14
             data.utmContent || "", // blob15
+            data.eventName || "", // blob16
+            data.eventData || "", // blob17
         ],
-        doubles: [data.newVisitor || 0, data.newSession || 0, data.bounce],
+        doubles: [data.newVisitor || 0, data.newSession || 0, data.bounce, data.isEvent || 0],
     };
 
     if (!analyticsEngine) {

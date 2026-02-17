@@ -17,3 +17,12 @@ export type ServerTrackPageviewOpts = {
     utmTerm?: string;
     utmContent?: string;
 };
+
+export type ServerTrackEventOpts = {
+    url: string;
+    hostname?: string;
+    eventName: string;
+    eventData?: string;
+    userAgent?: string;
+    ip?: string;
+};

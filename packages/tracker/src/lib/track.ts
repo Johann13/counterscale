@@ -7,11 +7,15 @@ import {
     getUtmParamsFromBrowserUrl,
     isLocalhostAddress,
 } from "../shared/utils";
-import { buildCollectRequestParams } from "../shared/request";
+import { buildCollectRequestParams, buildCollectEventParams } from "../shared/request";
 
 export type TrackPageviewOpts = {
     url?: string;
     referrer?: string;
+};
+
+export type TrackEventOpts = {
+    data?: string;
 };
 
 export function autoTrackPageviews(client: Client) {
@@ -113,6 +117,34 @@ export async function trackPageview(
         referrer,
         utmParams,
         hitType,
+    );
+
+    makeRequest(client.reporterUrl, requestParams);
+}
+
+export function trackEvent(
+    client: Client,
+    eventName: string,
+    opts: TrackEventOpts = {},
+) {
+    if (
+        !client.reportOnLocalhost &&
+        isLocalhostAddress(window.location.hostname)
+    ) {
+        return;
+    }
+
+    const { hostname, path } = getHostnameAndPath(
+        window.location.pathname + window.location.search || "/",
+        true,
+    );
+
+    const requestParams = buildCollectEventParams(
+        client.siteId,
+        hostname,
+        path,
+        eventName,
+        opts.data,
     );
 
     makeRequest(client.reporterUrl, requestParams);

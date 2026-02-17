@@ -25,6 +25,28 @@ export function buildCollectRequestParams(
     return params;
 }
 
+export function buildCollectEventParams(
+    siteId: string,
+    hostname: string,
+    path: string,
+    eventName: string,
+    eventData?: string,
+): CollectRequestParams {
+    const params: CollectRequestParams = {
+        p: path,
+        h: hostname,
+        r: "",
+        sid: siteId,
+        en: eventName,
+    };
+
+    if (eventData) {
+        params.ed = eventData;
+    }
+
+    return params;
+}
+
 export function buildCollectUrl(
     baseUrl: string,
     params: CollectRequestParams,

@@ -28,10 +28,13 @@ describe("resources.stats loader", () => {
             earliestBounce: new Date("2023-01-01T00:00:00Z"),
         });
 
+        const mockGetEventCounts = vi.fn().mockResolvedValue([]);
+
         const context = {
             analyticsEngine: {
                 getCounts: mockGetCounts,
                 getEarliestEvents: mockGetEarliestEvents,
+                getEventCounts: mockGetEventCounts,
             },
             cloudflare: {
                 env: {
@@ -60,6 +63,7 @@ describe("resources.stats loader", () => {
             visitors: 250,
             bounceRate: 0.5,
             hasSufficientBounceData: true,
+            totalEvents: 0,
         });
     });
 
@@ -72,10 +76,13 @@ describe("resources.stats loader", () => {
             earliestBounce: new Date("2023-01-04T00:00:00Z"), // Jan 4
         });
 
+        const mockGetEventCounts = vi.fn().mockResolvedValue([]);
+
         const context = {
             analyticsEngine: {
                 getCounts: mockGetCounts,
                 getEarliestEvents: mockGetEarliestEvents,
+                getEventCounts: mockGetEventCounts,
             },
             cloudflare: {
                 env: {
@@ -98,6 +105,7 @@ describe("resources.stats loader", () => {
             visitors: 250,
             bounceRate: 0.5,
             hasSufficientBounceData: false,
+            totalEvents: 0,
         });
     });
 
@@ -110,10 +118,13 @@ describe("resources.stats loader", () => {
             earliestBounce: new Date("2023-01-04T00:00:00Z"), // Jan 4 -- well before Jan 8th minus 1 day interval
         });
 
+        const mockGetEventCounts = vi.fn().mockResolvedValue([]);
+
         const context = {
             analyticsEngine: {
                 getCounts: mockGetCounts,
                 getEarliestEvents: mockGetEarliestEvents,
+                getEventCounts: mockGetEventCounts,
             },
             cloudflare: {
                 env: {
@@ -136,6 +147,7 @@ describe("resources.stats loader", () => {
             visitors: 250,
             bounceRate: 0.5,
             hasSufficientBounceData: true,
+            totalEvents: 0,
         });
     });
 });

@@ -29,6 +29,8 @@ export const ColumnMappings = {
     utmCampaign: "blob13",
     utmTerm: "blob14",
     utmContent: "blob15",
+    eventName: "blob16",
+    eventData: "blob17",
 
     /**
      * doubles
@@ -42,4 +44,7 @@ export const ColumnMappings = {
 
     // this record is the bounce value
     bounce: "double3",
+
+    // 1 = event, 0 = pageview
+    isEvent: "double4",
 } as const;
