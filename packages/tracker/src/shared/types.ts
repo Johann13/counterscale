@@ -4,6 +4,8 @@ export type CollectRequestParams = {
     r: string; // referrer
     sid: string; // siteId
     ht?: string; // hit type
+    en?: string; // event name
+    ed?: string; // event data
     [key: string]: string | undefined; // Allow additional string properties
 } & UtmParams;
 

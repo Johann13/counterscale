@@ -11,6 +11,7 @@ export interface SearchFilters {
     utmCampaign?: string;
     utmTerm?: string;
     utmContent?: string;
+    eventName?: string;
 }
 
 export interface User {

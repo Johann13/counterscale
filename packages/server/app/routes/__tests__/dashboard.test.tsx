@@ -302,6 +302,12 @@ describe("Dashboard route", () => {
                             return { countsByProperty: [] };
                         },
                     },
+                    {
+                        path: "/resources/events",
+                        loader: () => {
+                            return { countsByProperty: [] };
+                        },
+                    },
                 ],
             },
         ]);
@@ -462,6 +468,12 @@ describe("Dashboard route", () => {
                     },
                     {
                         path: "/resources/utm-content",
+                        loader: () => {
+                            return { countsByProperty: [] };
+                        },
+                    },
+                    {
+                        path: "/resources/events",
                         loader: () => {
                             return { countsByProperty: [] };
                         },

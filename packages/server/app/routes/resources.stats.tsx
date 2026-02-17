@@ -21,8 +21,11 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
     // intentionally parallelize queries by deferring await
     const earliestEvents = analyticsEngine.getEarliestEvents(site);
     const counts = await analyticsEngine.getCounts(site, interval, tz, filters);
+    const eventCounts = analyticsEngine.getEventCounts(site, interval, tz, filters, 1, 1);
 
     const { earliestEvent, earliestBounce } = await earliestEvents;
+    const eventCountsResult = await eventCounts;
+    const totalEvents = eventCountsResult.reduce((sum: number, [, count]: [string, number]) => sum + count, 0);
     const { startDate } = getDateTimeRange(interval, tz);
 
     // FOR BACKWARDS COMPAT, ONLY SHOW BOUNCE RATE IF WE HAVE DATE FOR THE ENTIRE QUERY PERIOD
@@ -51,6 +54,7 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
         visitors: counts.visitors,
         bounceRate: bounceRate,
         hasSufficientBounceData,
+        totalEvents,
     };
 }
 
@@ -67,7 +71,7 @@ export const StatsCard = ({
 }) => {
     const dataFetcher = useFetcher<typeof loader>();
 
-    const { views, visitors, bounceRate, hasSufficientBounceData } =
+    const { views, visitors, bounceRate, hasSufficientBounceData, totalEvents } =
         dataFetcher.data || {};
     const countFormatter = Intl.NumberFormat("en", { notation: "compact" });
 
@@ -90,7 +94,7 @@ export const StatsCard = ({
     return (
         <Card>
             <div className="p-4 pl-6">
-                <div className="grid grid-cols-3 gap-10 items-end">
+                <div className="grid grid-cols-4 gap-10 items-end">
                     <div>
                         <div className="text-md sm:text-lg">Visitors</div>
                         <div className="text-4xl">
@@ -117,6 +121,12 @@ export const StatsCard = ({
                                     ? `${Math.round(bounceRate * 100)}%`
                                     : "-"
                                 : "n/a"}
+                        </div>
+                    </div>
+                    <div>
+                        <div className="text-md sm:text-lg">Events</div>
+                        <div className="text-4xl">
+                            {totalEvents ? countFormatter.format(totalEvents) : "-"}
                         </div>
                     </div>
                 </div>

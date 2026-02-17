@@ -131,6 +131,9 @@ function generateEmptyRowsOverInterval(
     return initialRows;
 }
 
+// Exclude events from pageview queries; old data has NULL for double4, so include it
+const EXCLUDE_EVENTS = `AND (${ColumnMappings.isEvent} != 1 OR ${ColumnMappings.isEvent} IS NULL)`;
+
 function filtersToSql(filters: SearchFilters) {
     const supportedFilters: Array<keyof SearchFilters> = [
         "path",
@@ -144,6 +147,7 @@ function filtersToSql(filters: SearchFilters) {
         "utmCampaign",
         "utmTerm",
         "utmContent",
+        "eventName",
     ];
 
     let filterStr = "";
@@ -250,6 +254,7 @@ export class AnalyticsEngineAPI {
             WHERE timestamp >= toDateTime('${localStartTime.format("YYYY-MM-DD HH:mm:ss")}')
 								AND timestamp < toDateTime('${localEndTime.format("YYYY-MM-DD HH:mm:ss")}')
                 AND ${ColumnMappings.siteId} = '${siteId}'
+                ${EXCLUDE_EVENTS}
                 ${filterStr}
             GROUP BY _bucket, isVisitor, isBounce
             ORDER BY _bucket ASC`;
@@ -356,6 +361,7 @@ export class AnalyticsEngineAPI {
             WHERE timestamp >= ${startIntervalSql} AND timestamp < ${endIntervalSql}
                 ${filterStr}
             AND ${siteIdColumn} = '${siteId}'
+            ${EXCLUDE_EVENTS}
             GROUP BY isVisitor, isBounce
             ORDER BY isVisitor, isBounce ASC`;
 
@@ -420,6 +426,7 @@ export class AnalyticsEngineAPI {
             WHERE timestamp >= ${startIntervalSql} AND timestamp < ${endIntervalSql}
                 AND ${ColumnMappings.newVisitor} = 1
                 AND ${ColumnMappings.siteId} = '${siteId}'
+                ${EXCLUDE_EVENTS}
                 ${filterStr}
             GROUP BY ${_column}
             ORDER BY count DESC
@@ -588,6 +595,7 @@ export class AnalyticsEngineAPI {
             WHERE timestamp >= ${startIntervalSql} AND timestamp < ${endIntervalSql}
                 AND ${ColumnMappings.newVisitor} = 0
                 AND ${ColumnMappings.siteId} = '${siteId}'
+                ${EXCLUDE_EVENTS}
                 ${filterStr}
             GROUP BY ${_column}, ${ColumnMappings.newVisitor}
             ORDER BY count DESC
@@ -938,6 +946,7 @@ export class AnalyticsEngineAPI {
                 ${ColumnMappings.bounce} as isBounce
             FROM metricsDataset
             WHERE ${ColumnMappings.siteId} = '${siteId}'
+                ${EXCLUDE_EVENTS}
             GROUP by isBounce
         `;
 
@@ -983,5 +992,116 @@ export class AnalyticsEngineAPI {
         });
 
         return returnPromise;
+    }
+
+    async getEventCounts(
+        siteId: string,
+        interval: string,
+        tz?: string,
+        filters: SearchFilters = {},
+        page: number = 1,
+        limit: number = 10,
+    ): Promise<[eventName: string, count: number][]> {
+        const { startIntervalSql, endIntervalSql } = intervalToSql(
+            interval,
+            tz,
+        );
+
+        const filterStr = filtersToSql(filters);
+
+        const query = `
+            SELECT ${ColumnMappings.eventName} as eventName, SUM(_sample_interval) as count
+            FROM metricsDataset
+            WHERE timestamp >= ${startIntervalSql} AND timestamp < ${endIntervalSql}
+                AND ${ColumnMappings.siteId} = '${siteId}'
+                AND ${ColumnMappings.isEvent} = 1
+                AND ${ColumnMappings.eventName} != ''
+                ${filterStr}
+            GROUP BY eventName
+            ORDER BY count DESC
+            LIMIT ${limit * page}`;
+
+        type SelectionSet = {
+            eventName: string;
+            count: number;
+        };
+
+        const queryResult = this.query(query);
+        return new Promise<[string, number][]>((resolve, reject) =>
+            (async () => {
+                const response = await queryResult;
+
+                if (!response.ok) {
+                    reject(response.statusText);
+                    return;
+                }
+
+                const responseData =
+                    (await response.json()) as AnalyticsQueryResult<SelectionSet>;
+
+                const pageData = responseData.data.slice(
+                    limit * (page - 1),
+                    limit * page,
+                );
+
+                resolve(
+                    pageData.map((row) => [row.eventName, Number(row.count)]),
+                );
+            })(),
+        );
+    }
+
+    async getEventDataCounts(
+        siteId: string,
+        eventName: string,
+        interval: string,
+        tz?: string,
+        page: number = 1,
+        limit: number = 10,
+    ): Promise<[eventData: string, count: number][]> {
+        const { startIntervalSql, endIntervalSql } = intervalToSql(
+            interval,
+            tz,
+        );
+
+        const query = `
+            SELECT ${ColumnMappings.eventData} as eventData, SUM(_sample_interval) as count
+            FROM metricsDataset
+            WHERE timestamp >= ${startIntervalSql} AND timestamp < ${endIntervalSql}
+                AND ${ColumnMappings.siteId} = '${siteId}'
+                AND ${ColumnMappings.isEvent} = 1
+                AND ${ColumnMappings.eventName} = '${eventName}'
+            GROUP BY eventData
+            ORDER BY count DESC
+            LIMIT ${limit * page}`;
+
+        type SelectionSet = {
+            eventData: string;
+            count: number;
+        };
+
+        const queryResult = this.query(query);
+        return new Promise<[string, number][]>((resolve, reject) =>
+            (async () => {
+                const response = await queryResult;
+
+                if (!response.ok) {
+                    reject(response.statusText);
+                    return;
+                }
+
+                const responseData =
+                    (await response.json()) as AnalyticsQueryResult<SelectionSet>;
+
+                const pageData = responseData.data.slice(
+                    limit * (page - 1),
+                    limit * page,
+                );
+
+                resolve(
+                    pageData.map((row) => [row.eventData, Number(row.count)]),
+                );
+            })(),
+        );
     }
 }

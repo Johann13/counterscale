@@ -1,6 +1,6 @@
 import { ServerClient } from "./client";
-import { trackPageview as _trackPageview } from "./track";
-import type { ServerClientOpts, ServerTrackPageviewOpts } from "./types";
+import { trackPageview as _trackPageview, trackEvent as _trackEvent } from "./track";
+import type { ServerClientOpts, ServerTrackPageviewOpts, ServerTrackEventOpts } from "./types";
 
 const GLOBALS = {
     client: undefined as ServerClient | undefined,
@@ -28,6 +28,13 @@ export function trackPageview(opts: ServerTrackPageviewOpts) {
     return _trackPageview(GLOBALS.client, opts);
 }
 
+export function trackEvent(opts: ServerTrackEventOpts) {
+    if (!GLOBALS.client) {
+        throw new Error("You must call init() before calling trackEvent().");
+    }
+    return _trackEvent(GLOBALS.client, opts);
+}
+
 export function cleanup() {
     if (!GLOBALS.client) {
         return; // no-op if not already initialized
@@ -36,5 +43,5 @@ export function cleanup() {
     GLOBALS.client = undefined;
 }
 
-export type { ServerClientOpts, ServerTrackPageviewOpts } from "./types";
+export type { ServerClientOpts, ServerTrackPageviewOpts, ServerTrackEventOpts } from "./types";
 export { ServerClient } from "./client";
