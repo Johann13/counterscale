@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import type { ReactNode } from "react";
 import TableCard from "~/components/TableCard";
 
 import { Card } from "./ui/card";
@@ -11,10 +12,12 @@ interface PaginatedTableCardProps {
     dataFetcher: any;
     columnHeaders: string[];
     filters?: SearchFilters;
+    extraParams?: Record<string, string>;
     loaderUrl: string;
     onClick?: (key: string) => void;
     timezone?: string;
     labelFormatter?: (label: string) => string;
+    headerExtra?: ReactNode;
 }
 
 const PaginatedTableCard = ({
@@ -23,10 +26,12 @@ const PaginatedTableCard = ({
     dataFetcher,
     columnHeaders,
     filters,
+    extraParams,
     loaderUrl,
     onClick,
     timezone,
     labelFormatter,
+    headerExtra,
 }: PaginatedTableCardProps) => {
     const countsByProperty = dataFetcher.data?.countsByProperty || [];
     const [page, setPage] = useState(1);
@@ -37,6 +42,7 @@ const PaginatedTableCard = ({
             interval,
             timezone,
             ...filters,
+            ...extraParams,
             page,
         };
 
@@ -46,7 +52,7 @@ const PaginatedTableCard = ({
         });
         // NOTE: dataFetcher is intentionally omitted from the useEffect dependency array
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [loaderUrl, siteId, interval, filters, timezone, page]); //
+    }, [loaderUrl, siteId, interval, filters, extraParams, timezone, page]); //
 
     function handlePagination(page: number) {
         setPage(page);
@@ -55,6 +61,11 @@ const PaginatedTableCard = ({
     const hasMore = countsByProperty.length === 10;
     return (
         <Card className={dataFetcher.state === "loading" ? "opacity-60" : ""}>
+            {headerExtra && (
+                <div className="flex justify-end px-4 pt-3">
+                    {headerExtra}
+                </div>
+            )}
             {countsByProperty ? (
                 <div className="grid grid-rows-[auto,40px] h-full">
                     <TableCard

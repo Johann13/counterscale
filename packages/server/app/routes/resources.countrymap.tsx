@@ -1,4 +1,4 @@
-import { Component, useEffect } from "react";
+import { Component, useEffect, useState } from "react";
 import type { ErrorInfo, ReactNode } from "react";
 import { useFetcher } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
@@ -97,6 +97,9 @@ export const WorldMapCard = ({
     timezone: string;
 }) => {
     const fetcher = useFetcher<typeof loader>();
+    const [mapMode, setMapMode] = useState<"countries" | "cities">(
+        "countries",
+    );
 
     useEffect(() => {
         const params = {
@@ -118,12 +121,32 @@ export const WorldMapCard = ({
 
     return (
         <Card className={fetcher.state === "loading" ? "opacity-60" : ""}>
+            <div className="flex justify-end gap-1 px-4 pt-3">
+                {(["countries", "cities"] as const).map((mode) => (
+                    <button
+                        key={mode}
+                        type="button"
+                        onClick={() => setMapMode(mode)}
+                        className={`text-xs px-2 py-1 rounded border transition-colors capitalize ${
+                            mapMode === mode
+                                ? "bg-primary text-primary-foreground border-primary"
+                                : "bg-transparent text-muted-foreground border-border hover:border-primary/50"
+                        }`}
+                    >
+                        {mode}
+                    </button>
+                ))}
+            </div>
             <MapErrorBoundary>
                 <WorldMap
                     data={data}
                     cityMarkers={cityMarkers}
+                    mode={mapMode}
                     onCountryClick={(country) =>
                         onFilterChange({ ...filters, country })
+                    }
+                    onCityClick={(city) =>
+                        onFilterChange({ ...filters, city })
                     }
                 />
             </MapErrorBoundary>

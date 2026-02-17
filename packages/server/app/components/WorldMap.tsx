@@ -57,9 +57,12 @@ interface CityMarker {
     count: number;
 }
 
+type MapMode = "countries" | "cities";
+
 interface WorldMapProps {
     data: { code: string; count: number }[];
     cityMarkers?: CityMarker[];
+    mode?: MapMode;
     onCountryClick?: (countryCode: string) => void;
     onCityClick?: (city: string) => void;
 }
@@ -67,6 +70,7 @@ interface WorldMapProps {
 function WorldMapComponent({
     data,
     cityMarkers,
+    mode = "countries",
     onCountryClick,
     onCityClick,
 }: WorldMapProps) {
@@ -76,6 +80,7 @@ function WorldMapComponent({
         x: number;
         y: number;
     } | null>(null);
+    const [zoom, setZoom] = useState(1);
 
     // Build a lookup from alpha-2 code to count
     const countByCode: Record<string, number> = {};
@@ -104,30 +109,42 @@ function WorldMapComponent({
                 projectionConfig={{ scale: 147, center: [0, 10] }}
                 className="w-full h-full"
             >
-                <ZoomableGroup>
+                <ZoomableGroup
+                    onMoveEnd={({ zoom: z }) => setZoom(z)}
+                >
                     <Geographies geography={GEO_URL}>
                         {({ geographies }) =>
                             geographies.map((geo) => {
                                 const alpha2 =
                                     numericToAlpha2[geo.id] || "";
                                 const count = countByCode[alpha2] || 0;
+                                const showChoropleth = mode === "countries";
                                 return (
                                     <Geography
                                         key={geo.rsmKey}
                                         geography={geo}
-                                        fill={getColor(alpha2)}
+                                        fill={
+                                            showChoropleth
+                                                ? getColor(alpha2)
+                                                : "hsl(var(--muted))"
+                                        }
                                         stroke="hsl(var(--border))"
                                         strokeWidth={0.5}
                                         style={{
                                             default: { outline: "none" },
                                             hover: {
                                                 outline: "none",
-                                                fill: "#F46A3D",
-                                                cursor: "pointer",
+                                                fill: showChoropleth
+                                                    ? "#F46A3D"
+                                                    : "hsl(var(--muted))",
+                                                cursor: showChoropleth
+                                                    ? "pointer"
+                                                    : "default",
                                             },
                                             pressed: { outline: "none" },
                                         }}
                                         onMouseEnter={(evt) => {
+                                            if (!showChoropleth) return;
                                             const name =
                                                 geo.properties.name || "Unknown";
                                             setTooltipContent({
@@ -141,7 +158,11 @@ function WorldMapComponent({
                                             setTooltipContent(null);
                                         }}
                                         onClick={() => {
-                                            if (alpha2 && onCountryClick) {
+                                            if (
+                                                showChoropleth &&
+                                                alpha2 &&
+                                                onCountryClick
+                                            ) {
                                                 onCountryClick(alpha2);
                                             }
                                         }}
@@ -150,44 +171,52 @@ function WorldMapComponent({
                             })
                         }
                     </Geographies>
-                    {cityMarkers?.map((marker) => {
-                        const maxMarkerCount = cityMarkers.reduce(
-                            (max, m) => Math.max(max, m.count),
-                            1,
-                        );
-                        const radius =
-                            2 +
-                            (6 * Math.log(marker.count + 1)) /
-                                Math.log(maxMarkerCount + 1);
-                        return (
-                            <Marker
-                                key={`${marker.city}-${marker.lat}-${marker.lon}`}
-                                coordinates={[marker.lon, marker.lat]}
-                            >
-                                <circle
-                                    r={radius}
-                                    fill="rgba(244, 106, 61, 0.7)"
-                                    stroke="#fff"
-                                    strokeWidth={0.5}
-                                    style={{ cursor: "pointer" }}
-                                    onMouseEnter={(evt) => {
-                                        setTooltipContent({
-                                            name: marker.city,
-                                            count: marker.count,
-                                            x: evt.clientX,
-                                            y: evt.clientY,
-                                        });
-                                    }}
-                                    onMouseLeave={() => {
-                                        setTooltipContent(null);
-                                    }}
-                                    onClick={() => {
-                                        onCityClick?.(marker.city);
-                                    }}
-                                />
-                            </Marker>
-                        );
-                    })}
+                    {mode === "cities" &&
+                        (() => {
+                            const maxMarkerCount =
+                                cityMarkers?.reduce(
+                                    (max, m) => Math.max(max, m.count),
+                                    1,
+                                ) ?? 1;
+                            return cityMarkers?.map((marker) => {
+                                const baseRadius =
+                                    2 +
+                                    (6 * Math.log(marker.count + 1)) /
+                                        Math.log(maxMarkerCount + 1);
+                                const radius = baseRadius / zoom;
+                                return (
+                                    <Marker
+                                        key={`${marker.city}-${marker.lat}-${marker.lon}`}
+                                        coordinates={[
+                                            marker.lon,
+                                            marker.lat,
+                                        ]}
+                                    >
+                                        <circle
+                                            r={radius}
+                                            fill="rgba(244, 106, 61, 0.7)"
+                                            stroke="#fff"
+                                            strokeWidth={0.5 / zoom}
+                                            style={{ cursor: "pointer" }}
+                                            onMouseEnter={(evt) => {
+                                                setTooltipContent({
+                                                    name: marker.city,
+                                                    count: marker.count,
+                                                    x: evt.clientX,
+                                                    y: evt.clientY,
+                                                });
+                                            }}
+                                            onMouseLeave={() => {
+                                                setTooltipContent(null);
+                                            }}
+                                            onClick={() => {
+                                                onCityClick?.(marker.city);
+                                            }}
+                                        />
+                                    </Marker>
+                                );
+                            });
+                        })()}
                 </ZoomableGroup>
             </ComposableMap>
             {tooltipContent && (
