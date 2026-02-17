@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useFetcher } from "react-router";
 
 import type { LoaderFunctionArgs } from "react-router";
@@ -78,6 +78,10 @@ export const ReferrerCard = ({
     timezone: string;
 }) => {
     const [groupByDomain, setGroupByDomain] = useState(false);
+    const extraParams = useMemo(
+        () => (groupByDomain ? { groupByDomain: "1" } : undefined),
+        [groupByDomain],
+    );
 
     return (
         <PaginatedTableCard
@@ -87,7 +91,7 @@ export const ReferrerCard = ({
             dataFetcher={useFetcher<typeof loader>()}
             loaderUrl="/resources/referrer"
             filters={filters}
-            extraParams={groupByDomain ? { groupByDomain: "1" } : undefined}
+            extraParams={extraParams}
             onClick={(referrer) => onFilterChange({ ...filters, referrer })}
             timezone={timezone}
             headerExtra={
