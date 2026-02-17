@@ -1,7 +1,7 @@
 import { useFetcher } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { getFiltersFromSearchParams, paramsFromUrl } from "~/lib/utils";
-import PaginatedTableCard from "~/components/PaginatedTableCard";
+import PaginatedTableCardWithChart from "~/components/PaginatedTableCardWithChart";
 import { SearchFilters } from "~/lib/types";
 
 function convertCountryCodesToNames(
@@ -64,7 +64,7 @@ export const CountryCard = ({
     timezone: string;
 }) => {
     return (
-        <PaginatedTableCard
+        <PaginatedTableCardWithChart
             siteId={siteId}
             interval={interval}
             columnHeaders={["Country", "Visitors"]}
@@ -73,6 +73,7 @@ export const CountryCard = ({
             filters={filters}
             onClick={(country) => onFilterChange({ ...filters, country })}
             timezone={timezone}
+            enableChart={true}
         />
     );
 };

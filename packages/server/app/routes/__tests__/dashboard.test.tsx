@@ -34,7 +34,20 @@ describe("Dashboard route", () => {
     });
 
     beforeEach(() => {
-        fetch = global.fetch = vi.fn();
+        // Default mock returns a valid empty response (needed for react-simple-maps geography fetch).
+        // Test-specific mockResolvedValueOnce calls take priority over this default.
+        fetch = global.fetch = vi.fn().mockResolvedValue(
+            createFetchResponse({
+                type: "Topology",
+                objects: {
+                    countries: {
+                        type: "GeometryCollection",
+                        geometries: [],
+                    },
+                },
+                arcs: [],
+            }),
+        );
         vi.mocked(requireAuth).mockResolvedValue({} as any);
     });
 
@@ -302,6 +315,12 @@ describe("Dashboard route", () => {
                             return { countsByProperty: [] };
                         },
                     },
+                    {
+                        path: "/resources/countrymap",
+                        loader: () => {
+                            return { countsByCountry: [] };
+                        },
+                    },
                 ],
             },
         ]);
@@ -464,6 +483,12 @@ describe("Dashboard route", () => {
                         path: "/resources/utm-content",
                         loader: () => {
                             return { countsByProperty: [] };
+                        },
+                    },
+                    {
+                        path: "/resources/countrymap",
+                        loader: () => {
+                            return { countsByCountry: [] };
                         },
                     },
                 ],

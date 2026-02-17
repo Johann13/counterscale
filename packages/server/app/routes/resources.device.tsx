@@ -3,7 +3,7 @@ import { useFetcher } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 
 import { getFiltersFromSearchParams, paramsFromUrl } from "~/lib/utils";
-import PaginatedTableCard from "~/components/PaginatedTableCard";
+import PaginatedTableCardWithChart from "~/components/PaginatedTableCardWithChart";
 import { SearchFilters } from "~/lib/types";
 
 export async function loader({ context, request }: LoaderFunctionArgs) {
@@ -41,7 +41,7 @@ export const DeviceCard = ({
     timezone: string;
 }) => {
     return (
-        <PaginatedTableCard
+        <PaginatedTableCardWithChart
             siteId={siteId}
             interval={interval}
             columnHeaders={["Device", "Visitors"]}
@@ -53,6 +53,7 @@ export const DeviceCard = ({
             labelFormatter={(label) =>
                 label.charAt(0).toUpperCase() + label.slice(1)
             }
+            enableChart={true}
         />
     );
 };
