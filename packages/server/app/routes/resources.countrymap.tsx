@@ -15,13 +15,37 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
     const tz = url.searchParams.get("timezone") || "UTC";
     const filters = getFiltersFromSearchParams(url.searchParams);
 
-    const countsByCountry = await analyticsEngine.getCountByCountry(
-        site,
-        interval,
-        tz,
-        filters,
-        1,
-    );
+    const [countsByCountry, cityCoords] = await Promise.all([
+        analyticsEngine.getCountByCountry(site, interval, tz, filters, 1),
+        analyticsEngine.getCountByCityWithCoordinates(
+            site,
+            interval,
+            tz,
+            filters,
+        ),
+    ]);
+
+    // Process city coordinates: split blob18 for city name, blob19 for lat/lon
+    // Deduplicate by city name, keeping the highest-count entry
+    const cityMap = new Map<
+        string,
+        { city: string; lat: number; lon: number; count: number }
+    >();
+    for (const [regionCity, latLon, count] of cityCoords) {
+        const cityParts = regionCity.split("|");
+        const city = cityParts[1] || "";
+        if (!city) continue;
+
+        const coordParts = latLon.split("|");
+        const lat = parseFloat(coordParts[0]);
+        const lon = parseFloat(coordParts[1]);
+        if (isNaN(lat) || isNaN(lon)) continue;
+
+        const existing = cityMap.get(city);
+        if (!existing || count > existing.count) {
+            cityMap.set(city, { city, lat, lon, count });
+        }
+    }
 
     return {
         countsByCountry: countsByCountry.map(
@@ -30,6 +54,7 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
                 count,
             }),
         ),
+        cityMarkers: Array.from(cityMap.values()),
     };
 }
 
@@ -89,12 +114,14 @@ export const WorldMapCard = ({
     }, [siteId, interval, filters, timezone]);
 
     const data = fetcher.data?.countsByCountry || [];
+    const cityMarkers = fetcher.data?.cityMarkers || [];
 
     return (
         <Card className={fetcher.state === "loading" ? "opacity-60" : ""}>
             <MapErrorBoundary>
                 <WorldMap
                     data={data}
+                    cityMarkers={cityMarkers}
                     onCountryClick={(country) =>
                         onFilterChange({ ...filters, country })
                     }

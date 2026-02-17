@@ -3,6 +3,7 @@ import {
     ComposableMap,
     Geographies,
     Geography,
+    Marker,
     ZoomableGroup,
 } from "react-simple-maps";
 import { Card } from "./ui/card";
@@ -49,12 +50,26 @@ const numericToAlpha2: Record<string, string> = {
 
 const GEO_URL = "/countries-110m.json";
 
-interface WorldMapProps {
-    data: { code: string; count: number }[];
-    onCountryClick?: (countryCode: string) => void;
+interface CityMarker {
+    city: string;
+    lat: number;
+    lon: number;
+    count: number;
 }
 
-function WorldMapComponent({ data, onCountryClick }: WorldMapProps) {
+interface WorldMapProps {
+    data: { code: string; count: number }[];
+    cityMarkers?: CityMarker[];
+    onCountryClick?: (countryCode: string) => void;
+    onCityClick?: (city: string) => void;
+}
+
+function WorldMapComponent({
+    data,
+    cityMarkers,
+    onCountryClick,
+    onCityClick,
+}: WorldMapProps) {
     const [tooltipContent, setTooltipContent] = useState<{
         name: string;
         count: number;
@@ -135,6 +150,44 @@ function WorldMapComponent({ data, onCountryClick }: WorldMapProps) {
                             })
                         }
                     </Geographies>
+                    {cityMarkers?.map((marker) => {
+                        const maxMarkerCount = cityMarkers.reduce(
+                            (max, m) => Math.max(max, m.count),
+                            1,
+                        );
+                        const radius =
+                            2 +
+                            (6 * Math.log(marker.count + 1)) /
+                                Math.log(maxMarkerCount + 1);
+                        return (
+                            <Marker
+                                key={`${marker.city}-${marker.lat}-${marker.lon}`}
+                                coordinates={[marker.lon, marker.lat]}
+                            >
+                                <circle
+                                    r={radius}
+                                    fill="rgba(244, 106, 61, 0.7)"
+                                    stroke="#fff"
+                                    strokeWidth={0.5}
+                                    style={{ cursor: "pointer" }}
+                                    onMouseEnter={(evt) => {
+                                        setTooltipContent({
+                                            name: marker.city,
+                                            count: marker.count,
+                                            x: evt.clientX,
+                                            y: evt.clientY,
+                                        });
+                                    }}
+                                    onMouseLeave={() => {
+                                        setTooltipContent(null);
+                                    }}
+                                    onClick={() => {
+                                        onCityClick?.(marker.city);
+                                    }}
+                                />
+                            </Marker>
+                        );
+                    })}
                 </ZoomableGroup>
             </ComposableMap>
             {tooltipContent && (
