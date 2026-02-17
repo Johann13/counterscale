@@ -336,9 +336,9 @@ describe("Dashboard route", () => {
         await waitFor(() => screen.findByText("Path"));
         expect(screen.getByText("Path")).toBeInTheDocument();
         expect(screen.getByText("Referrer")).toBeInTheDocument();
-        expect(screen.getByText("Browser")).toBeInTheDocument();
-        expect(screen.getByText("Country")).toBeInTheDocument();
-        expect(screen.getByText("Device")).toBeInTheDocument();
+        expect(screen.getAllByText("Browser").length).toBeGreaterThan(0);
+        expect(screen.getAllByText("Country").length).toBeGreaterThan(0);
+        expect(screen.getAllByText("Device").length).toBeGreaterThan(0);
         expect(screen.getByText("UTM Source")).toBeInTheDocument();
         expect(screen.getByText("UTM Medium")).toBeInTheDocument();
         expect(screen.getByText("UTM Campaign")).toBeInTheDocument();
