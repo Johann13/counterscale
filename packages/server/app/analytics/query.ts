@@ -745,6 +745,7 @@ export class AnalyticsEngineAPI {
                 SUM(_sample_interval) as count
             FROM metricsDataset
             WHERE timestamp >= ${startIntervalSql} AND timestamp < ${endIntervalSql}
+                AND ${ColumnMappings.newVisitor} = 1
                 AND ${ColumnMappings.siteId} = '${siteId}'
                 AND ${ColumnMappings.regionCity} != ''
                 AND ${ColumnMappings.latLon} != ''
