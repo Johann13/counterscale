@@ -136,6 +136,8 @@ describe("collectRequestHandler", () => {
                 "ad1", // utm_content
                 "", // eventName
                 "", // eventData
+                "", // regionCity
+                "", // latLon
             ],
             doubles: [
                 1, // new visitor
@@ -401,6 +403,54 @@ describe("collectRequestHandler", () => {
         expect(blobs[12]).toBe("summer_sale"); // utm_campaign
         expect(blobs[13]).toBe("running_shoes"); // utm_term
         expect(blobs[14]).toBe("ad1"); // utm_content
+    });
+
+    test("packs region and city into blob18 as regionCity", () => {
+        const env = {
+            WEB_COUNTER_AE: {
+                writeDataPoint: vi.fn(),
+            } as AnalyticsEngineDataset,
+        } as Env;
+
+        // @ts-expect-error - we're mocking the request object
+        const request = httpMocks.createRequest(defaultRequestParams);
+
+        collectRequestHandler(request as any, env, {
+            country: "US",
+            region: "California",
+            city: "San Francisco",
+        });
+
+        const writeDataPoint = env.WEB_COUNTER_AE.writeDataPoint;
+        expect(env.WEB_COUNTER_AE.writeDataPoint).toHaveBeenCalled();
+
+        const blobs = (writeDataPoint as Mock).mock.calls[0][0].blobs;
+        expect(blobs[17]).toBe("California|San Francisco"); // regionCity (blob18)
+    });
+
+    test("packs latitude and longitude into blob19 as latLon", () => {
+        const env = {
+            WEB_COUNTER_AE: {
+                writeDataPoint: vi.fn(),
+            } as AnalyticsEngineDataset,
+        } as Env;
+
+        // @ts-expect-error - we're mocking the request object
+        const request = httpMocks.createRequest(defaultRequestParams);
+
+        collectRequestHandler(request as any, env, {
+            country: "US",
+            region: "California",
+            city: "San Francisco",
+            latitude: "37.77",
+            longitude: "-122.42",
+        });
+
+        const writeDataPoint = env.WEB_COUNTER_AE.writeDataPoint;
+        expect(env.WEB_COUNTER_AE.writeDataPoint).toHaveBeenCalled();
+
+        const blobs = (writeDataPoint as Mock).mock.calls[0][0].blobs;
+        expect(blobs[18]).toBe("37.77|-122.42"); // latLon (blob19)
     });
 
     test("handles missing UTM parameters gracefully", () => {

@@ -220,6 +220,18 @@ export function collectRequestHandler(
         data.country = country;
     }
 
+    const region = extra?.region;
+    const city = extra?.city;
+    if (typeof region === "string" || typeof city === "string") {
+        data.regionCity = `${region || ""}|${city || ""}`;
+    }
+
+    const latitude = extra?.latitude;
+    const longitude = extra?.longitude;
+    if (typeof latitude === "string" && typeof longitude === "string") {
+        data.latLon = `${latitude}|${longitude}`;
+    }
+
     writeDataPoint(env.WEB_COUNTER_AE, data);
 
     // encode 1x1 transparent gif
@@ -272,6 +284,8 @@ interface DataPoint {
     utmContent?: string;
     eventName?: string;
     eventData?: string;
+    regionCity?: string;
+    latLon?: string;
 
     // doubles
     newVisitor: number;
@@ -307,6 +321,8 @@ export function writeDataPoint(
             data.utmContent || "", // blob15
             data.eventName || "", // blob16
             data.eventData || "", // blob17
+            data.regionCity || "", // blob18
+            data.latLon || "", // blob19
         ],
         doubles: [data.newVisitor || 0, data.newSession || 0, data.bounce, data.isEvent || 0],
     };

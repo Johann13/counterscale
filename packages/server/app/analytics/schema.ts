@@ -31,6 +31,8 @@ export const ColumnMappings = {
     utmContent: "blob15",
     eventName: "blob16",
     eventData: "blob17",
+    regionCity: "blob18",
+    latLon: "blob19",
 
     /**
      * doubles
