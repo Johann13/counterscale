@@ -135,7 +135,7 @@ function generateEmptyRowsOverInterval(
 const EXCLUDE_EVENTS = `AND (${ColumnMappings.isEvent} != 1 OR ${ColumnMappings.isEvent} IS NULL)`;
 
 function filtersToSql(filters: SearchFilters) {
-    const supportedFilters: Array<keyof SearchFilters> = [
+    const supportedFilters: Array<keyof SearchFilters & keyof typeof ColumnMappings> = [
         "path",
         "referrer",
         "browserName",
@@ -704,6 +704,83 @@ export class AnalyticsEngineAPI {
             tz,
             filters,
             page,
+        );
+    }
+
+    async getCountByRegionCity(
+        siteId: string,
+        interval: string,
+        tz?: string,
+        filters: SearchFilters = {},
+        limit: number = 200,
+    ): Promise<[regionCity: string, visitors: number][]> {
+        return this.getVisitorCountByColumn(
+            siteId,
+            "regionCity",
+            interval,
+            tz,
+            filters,
+            1,
+            limit,
+        );
+    }
+
+    async getCountByCityWithCoordinates(
+        siteId: string,
+        interval: string,
+        tz?: string,
+        filters: SearchFilters = {},
+        limit: number = 100,
+    ): Promise<[regionCity: string, latLon: string, count: number][]> {
+        const { startIntervalSql, endIntervalSql } = intervalToSql(
+            interval,
+            tz,
+        );
+
+        const filterStr = filtersToSql(filters);
+
+        const query = `
+            SELECT ${ColumnMappings.regionCity} as regionCity,
+                ${ColumnMappings.latLon} as latLon,
+                SUM(_sample_interval) as count
+            FROM metricsDataset
+            WHERE timestamp >= ${startIntervalSql} AND timestamp < ${endIntervalSql}
+                AND ${ColumnMappings.siteId} = '${siteId}'
+                AND ${ColumnMappings.regionCity} != ''
+                AND ${ColumnMappings.latLon} != ''
+                ${EXCLUDE_EVENTS}
+                ${filterStr}
+            GROUP BY regionCity, latLon
+            ORDER BY count DESC
+            LIMIT ${limit}`;
+
+        type SelectionSet = {
+            regionCity: string;
+            latLon: string;
+            count: number;
+        };
+
+        const queryResult = this.query(query);
+        return new Promise<[string, string, number][]>((resolve, reject) =>
+            (async () => {
+                const response = await queryResult;
+
+                if (!response.ok) {
+                    reject(response.statusText);
+                    return;
+                }
+
+                const responseData =
+                    (await response.json()) as AnalyticsQueryResult<SelectionSet>;
+
+                resolve(
+                    responseData.data.map((row) => [
+                        row.regionCity,
+                        row.latLon,
+                        Number(row.count),
+                    ]),
+                );
+            })(),
         );
     }
 
