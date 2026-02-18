@@ -1,18 +1,22 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 
 export function useLocalStorage<T>(
     key: string,
     defaultValue: T,
 ): [T, (value: T | ((prev: T) => T)) => void] {
-    const [storedValue, setStoredValue] = useState<T>(() => {
-        if (typeof window === "undefined") return defaultValue;
+    const [storedValue, setStoredValue] = useState<T>(defaultValue);
+
+    // Sync from localStorage after hydration
+    useEffect(() => {
         try {
             const item = window.localStorage.getItem(key);
-            return item !== null ? (JSON.parse(item) as T) : defaultValue;
+            if (item !== null) {
+                setStoredValue(JSON.parse(item) as T);
+            }
         } catch {
-            return defaultValue;
+            // ignore
         }
-    });
+    }, [key]);
 
     const setValue = useCallback(
         (value: T | ((prev: T) => T)) => {
