@@ -147,10 +147,58 @@ export function getDateTimeRange(interval: string, tz: string) {
 
 export function getPreviousPeriodDateRange(interval: string, tz: string) {
     const { startDate, endDate } = getDateTimeRange(interval, tz);
+    if (interval === "today" || interval === "yesterday") {
+        // Use dayjs subtract to handle DST transitions correctly
+        // (DST days can be 23h or 25h, not always 24h)
+        return {
+            startDate: dayjs(startDate).tz(tz).subtract(1, "day").toDate(),
+            endDate: dayjs(endDate).tz(tz).subtract(1, "day").toDate(),
+        };
+    }
     const periodMs = endDate.getTime() - startDate.getTime();
     return {
         startDate: new Date(startDate.getTime() - periodMs),
         endDate: new Date(endDate.getTime() - periodMs),
+    };
+}
+
+export async function loadWithComparison<T>(
+    request: Request,
+    fetchData: (
+        site: string,
+        interval: string,
+        tz: string,
+        filters: SearchFilters,
+        page: number,
+        startDate?: Date,
+        endDate?: Date,
+    ) => Promise<T>,
+) {
+    const { interval, site, page = 1, compare } = paramsFromUrl(request.url);
+    const url = new URL(request.url);
+    const tz = url.searchParams.get("timezone") || "UTC";
+    const filters = getFiltersFromSearchParams(url.searchParams);
+    const pageNum = Number(page);
+
+    const currentData = fetchData(site, interval, tz, filters, pageNum);
+
+    let previousData = null;
+    if (compare === "1") {
+        const { startDate, endDate } = getPreviousPeriodDateRange(interval, tz);
+        previousData = fetchData(
+            site, interval, tz, filters, pageNum, startDate, endDate,
+        );
+    }
+
+    const [current, previous] = await Promise.all([
+        currentData,
+        previousData ?? Promise.resolve(null),
+    ]);
+
+    return {
+        countsByProperty: current,
+        previousCountsByProperty: previous,
+        page: pageNum,
     };
 }
 

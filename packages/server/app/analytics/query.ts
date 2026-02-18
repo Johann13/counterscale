@@ -50,7 +50,16 @@ export function intervalToSql(
     interval: string,
     tz?: string,
     bucketIntervalMinutes: number = 5,
+    startDate?: Date,
+    endDate?: Date,
 ) {
+    if (startDate && endDate) {
+        return {
+            startIntervalSql: `toDateTime('${dayjs(startDate).utc().format("YYYY-MM-DD HH:mm:ss")}')`,
+            endIntervalSql: `toDateTime('${dayjs(endDate).utc().format("YYYY-MM-DD HH:mm:ss")}')`,
+        };
+    }
+
     let startIntervalSql = "";
     let endIntervalSql = "";
     switch (interval) {
@@ -411,10 +420,11 @@ export class AnalyticsEngineAPI {
         filters: SearchFilters = {},
         page: number = 1,
         limit: number = 10,
+        startDate?: Date,
+        endDate?: Date,
     ) {
         const { startIntervalSql, endIntervalSql } = intervalToSql(
-            interval,
-            tz,
+            interval, tz, 5, startDate, endDate,
         );
 
         const filterStr = filtersToSql(filters);
@@ -557,10 +567,11 @@ export class AnalyticsEngineAPI {
         filters: SearchFilters = {},
         page: number = 1,
         limit: number = 10,
+        startDate?: Date,
+        endDate?: Date,
     ): Promise<Record<string, AnalyticsCountResult>> {
         const { startIntervalSql, endIntervalSql } = intervalToSql(
-            interval,
-            tz,
+            interval, tz, 5, startDate, endDate,
         );
 
         // first query by visitor count – this is to figure out the top N results
@@ -574,6 +585,8 @@ export class AnalyticsEngineAPI {
             filters,
             page,
             limit,
+            startDate,
+            endDate,
         );
 
         // next, make a second query - this time for non-visitor hits - by filtering
@@ -669,6 +682,8 @@ export class AnalyticsEngineAPI {
         tz?: string,
         filters: SearchFilters = {},
         page: number = 1,
+        startDate?: Date,
+        endDate?: Date,
     ): Promise<[path: string, visitors: number, views: number][]> {
         const allCountsResultPromise = this.getAllCountsByColumn(
             siteId,
@@ -677,6 +692,9 @@ export class AnalyticsEngineAPI {
             tz,
             filters,
             page,
+            10,
+            startDate,
+            endDate,
         );
 
         return allCountsResultPromise.then((allCountsResult) => {
@@ -690,29 +708,14 @@ export class AnalyticsEngineAPI {
         });
     }
 
-    async getCountByCountry(
-        siteId: string,
-        interval: string,
-        tz?: string,
-        filters: SearchFilters = {},
-        page: number = 1,
-    ): Promise<[country: string, visitors: number][]> {
-        return this.getVisitorCountByColumn(
-            siteId,
-            "country",
-            interval,
-            tz,
-            filters,
-            page,
-        );
-    }
-
     async getCountByRegionCity(
         siteId: string,
         interval: string,
         tz?: string,
         filters: SearchFilters = {},
         limit: number = 200,
+        startDate?: Date,
+        endDate?: Date,
     ): Promise<[regionCity: string, visitors: number][]> {
         return this.getVisitorCountByColumn(
             siteId,
@@ -722,6 +725,8 @@ export class AnalyticsEngineAPI {
             filters,
             1,
             limit,
+            startDate,
+            endDate,
         );
     }
 
@@ -791,6 +796,8 @@ export class AnalyticsEngineAPI {
         tz?: string,
         filters: SearchFilters = {},
         page: number = 1,
+        startDate?: Date,
+        endDate?: Date,
     ): Promise<[referrer: string, visitors: number, views: number][]> {
         const allCountsResultPromise = this.getAllCountsByColumn(
             siteId,
@@ -799,6 +806,9 @@ export class AnalyticsEngineAPI {
             tz,
             filters,
             page,
+            10,
+            startDate,
+            endDate,
         );
 
         return allCountsResultPromise.then((allCountsResult) => {
@@ -810,159 +820,6 @@ export class AnalyticsEngineAPI {
             // sort by visitors
             return result.sort((a, b) => b[1] - a[1]);
         });
-    }
-
-    async getCountByBrowser(
-        siteId: string,
-        interval: string,
-        tz?: string,
-        filters: SearchFilters = {},
-        page: number = 1,
-    ): Promise<[browser: string, visitors: number][]> {
-        return this.getVisitorCountByColumn(
-            siteId,
-            "browserName",
-            interval,
-            tz,
-            filters,
-            page,
-        );
-    }
-
-    async getCountByBrowserVersion(
-        siteId: string,
-        interval: string,
-        tz?: string,
-        filters: SearchFilters = {},
-        page: number = 1,
-    ): Promise<[browser: string, visitors: number][]> {
-        return this.getVisitorCountByColumn(
-            siteId,
-            "browserVersion",
-            interval,
-            tz,
-            filters,
-            page,
-        );
-    }
-
-    async getCountByDeviceModel(
-        siteId: string,
-        interval: string,
-        tz?: string,
-        filters: SearchFilters = {},
-        page: number = 1,
-    ): Promise<[deviceModel: string, visitors: number][]> {
-        return this.getVisitorCountByColumn(
-            siteId,
-            "deviceModel",
-            interval,
-            tz,
-            filters,
-            page,
-        );
-    }
-
-    async getCountByDeviceType(
-        siteId: string,
-        interval: string,
-        tz?: string,
-        filters: SearchFilters = {},
-        page: number = 1,
-    ): Promise<[deviceType: string, visitors: number][]> {
-        return this.getVisitorCountByColumn(
-            siteId,
-            "deviceType",
-            interval,
-            tz,
-            filters,
-            page,
-        );
-    }
-
-    async getCountByUtmSource(
-        siteId: string,
-        interval: string,
-        tz?: string,
-        filters: SearchFilters = {},
-        page: number = 1,
-    ): Promise<[utmSource: string, visitors: number][]> {
-        return this.getVisitorCountByColumn(
-            siteId,
-            "utmSource",
-            interval,
-            tz,
-            filters,
-            page,
-        );
-    }
-
-    async getCountByUtmMedium(
-        siteId: string,
-        interval: string,
-        tz?: string,
-        filters: SearchFilters = {},
-        page: number = 1,
-    ): Promise<[utmMedium: string, visitors: number][]> {
-        return this.getVisitorCountByColumn(
-            siteId,
-            "utmMedium",
-            interval,
-            tz,
-            filters,
-            page,
-        );
-    }
-
-    async getCountByUtmCampaign(
-        siteId: string,
-        interval: string,
-        tz?: string,
-        filters: SearchFilters = {},
-        page: number = 1,
-    ): Promise<[utmCampaign: string, visitors: number][]> {
-        return this.getVisitorCountByColumn(
-            siteId,
-            "utmCampaign",
-            interval,
-            tz,
-            filters,
-            page,
-        );
-    }
-
-    async getCountByUtmTerm(
-        siteId: string,
-        interval: string,
-        tz?: string,
-        filters: SearchFilters = {},
-        page: number = 1,
-    ): Promise<[utmTerm: string, visitors: number][]> {
-        return this.getVisitorCountByColumn(
-            siteId,
-            "utmTerm",
-            interval,
-            tz,
-            filters,
-            page,
-        );
-    }
-
-    async getCountByUtmContent(
-        siteId: string,
-        interval: string,
-        tz?: string,
-        filters: SearchFilters = {},
-        page: number = 1,
-    ): Promise<[utmContent: string, visitors: number][]> {
-        return this.getVisitorCountByColumn(
-            siteId,
-            "utmContent",
-            interval,
-            tz,
-            filters,
-            page,
-        );
     }
 
     async getSitesOrderedByHits(interval: string, limit?: number) {
@@ -1079,10 +936,11 @@ export class AnalyticsEngineAPI {
         filters: SearchFilters = {},
         page: number = 1,
         limit: number = 10,
+        startDate?: Date,
+        endDate?: Date,
     ): Promise<[eventName: string, count: number][]> {
         const { startIntervalSql, endIntervalSql } = intervalToSql(
-            interval,
-            tz,
+            interval, tz, 5, startDate, endDate,
         );
 
         const filterStr = filtersToSql(filters);
