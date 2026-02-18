@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useLocalStorage } from "~/hooks/useLocalStorage";
 import type { ReactNode } from "react";
 import TableCard from "~/components/TableCard";
 import PieChartCard from "~/components/PieChartCard";
@@ -46,8 +47,11 @@ const PaginatedTableCard = ({
     const previousCountsByProperty =
         dataFetcher.data?.previousCountsByProperty || null;
     const [page, setPage] = useState(1);
-    const [compare, setCompare] = useState(false);
-    const [mode, setMode] = useState<"table" | "chart">("table");
+    const [compare, setCompare] = useLocalStorage("cs:compare", false);
+    const [mode, setMode] = useLocalStorage<"table" | "chart">(
+        "cs:viewMode",
+        "table",
+    );
 
     const mergedExtraParams = useMemo(
         () => ({

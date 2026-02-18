@@ -10,6 +10,7 @@ import {
 } from "recharts";
 
 import { useMemo, useState } from "react";
+import { useLocalStorage } from "~/hooks/useLocalStorage";
 import { Card } from "./ui/card";
 
 interface Visibility {
@@ -135,11 +136,14 @@ export default function ComparisonChart({
     previousData,
     intervalType,
 }: ComparisonChartProps) {
-    const [visible, setVisible] = useState<Visibility>({
-        views: true,
-        visitors: true,
-        bounceRate: true,
-    });
+    const [visible, setVisible] = useLocalStorage<Visibility>(
+        "cs:comparisonVisible",
+        {
+            views: true,
+            visitors: true,
+            bounceRate: true,
+        },
+    );
 
     function toggleSeries(key: keyof Visibility) {
         setVisible((prev) => ({ ...prev, [key]: !prev[key] }));

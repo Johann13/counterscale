@@ -1,4 +1,5 @@
 import { Component, useEffect, useState } from "react";
+import { useLocalStorage } from "~/hooks/useLocalStorage";
 import type { ErrorInfo, ReactNode } from "react";
 import { useFetcher } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
@@ -97,7 +98,8 @@ export const WorldMapCard = ({
     timezone: string;
 }) => {
     const fetcher = useFetcher<typeof loader>();
-    const [mapMode, setMapMode] = useState<"countries" | "cities">(
+    const [mapMode, setMapMode] = useLocalStorage<"countries" | "cities">(
+        "cs:mapMode",
         "countries",
     );
 

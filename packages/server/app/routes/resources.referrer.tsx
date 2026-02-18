@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useLocalStorage } from "~/hooks/useLocalStorage";
 import { useFetcher } from "react-router";
 
 import type { LoaderFunctionArgs } from "react-router";
@@ -70,7 +71,10 @@ export const ReferrerCard = ({
     onFilterChange: (filters: SearchFilters) => void;
     timezone: string;
 }) => {
-    const [groupByDomain, setGroupByDomain] = useState(false);
+    const [groupByDomain, setGroupByDomain] = useLocalStorage(
+        "cs:referrerGroupByDomain",
+        false,
+    );
     const extraParams = useMemo(
         () => (groupByDomain ? { groupByDomain: "1" } : undefined),
         [groupByDomain],
