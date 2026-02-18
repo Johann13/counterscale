@@ -36,7 +36,7 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
     const url = new URL(request.url);
     const groupByDomain = url.searchParams.get("groupByDomain") === "1";
 
-    const result = await loadWithComparison(
+    const result = await loadWithComparison<[string, number, number][]>(
         request,
         (site, interval, tz, filters, page, startDate, endDate) =>
             context.analyticsEngine.getCountByReferrer(

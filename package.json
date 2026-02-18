@@ -3,7 +3,9 @@
     "scripts": {
         "build": "turbo run build",
         "dev": "turbo run dev",
-        "lint": "turbo run lint"
+        "lint": "turbo run lint",
+        "test": "turbo run test",
+        "typecheck": "turbo run typecheck"
     },
     "devDependencies": {
         "eslint-config-prettier": "^9.1.0",

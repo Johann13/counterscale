@@ -47,7 +47,7 @@ function EventDataSubRows({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [siteId, interval, timezone, eventName, page]);
 
-    const rows = fetcher.data?.countsByProperty || [];
+    const rows: [string, number][] = fetcher.data?.countsByProperty || [];
     const countFormatter = Intl.NumberFormat("en", { notation: "compact" });
     const hasMore = rows.length === 10;
 

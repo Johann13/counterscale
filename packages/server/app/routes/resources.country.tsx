@@ -20,7 +20,7 @@ function convertCountryCodesToNames(
 }
 
 export async function loader({ context, request }: LoaderFunctionArgs) {
-    const result = await loadWithComparison(
+    const result = await loadWithComparison<[string, number][]>(
         request,
         (site, interval, tz, filters, page, startDate, endDate) =>
             context.analyticsEngine.getVisitorCountByColumn(
