@@ -84,6 +84,24 @@ export default function TableCard({
         }
     }
 
+    // Compute previous bar percentages relative to the same total as current
+    // so bars are visually comparable
+    const currentTotal = countByProperty.reduce(
+        (sum, row) => sum + parseInt(row[1]),
+        0,
+    );
+    const previousBarPercentages = previousCountByProperty
+        ? countByProperty.map((item) => {
+              const desc = item[0];
+              const key = Array.isArray(desc) ? desc[0] : desc;
+              const prevValues = previousLookup.get(key as string);
+              if (!prevValues) return "0%";
+              const prevCount = parseInt(prevValues[0], 10);
+              if (isNaN(prevCount) || currentTotal === 0) return "0%";
+              return `${((prevCount / currentTotal) * 100).toFixed(2)}%`;
+          })
+        : null;
+
     const gridCols =
         (columnHeaders || []).length === 3
             ? "grid-cols-[minmax(0,1fr),minmax(0,8ch),minmax(0,8ch)]"
@@ -208,6 +226,28 @@ export default function TableCard({
                                     </TableCell>
                                 )}
                             </TableRow>
+                            {previousBarPercentages && (
+                                <TableRow
+                                    className={`${gridCols} opacity-50`}
+                                    width={previousBarPercentages[index]}
+                                >
+                                    <TableCell className="overflow-hidden font-medium min-w-48 whitespace-normal relative flex items-center justify-start gap-2 text-muted-foreground text-xs">
+                                        {formattedLabel}
+                                    </TableCell>
+                                    <TableCell className="text-right min-w-16 text-muted-foreground text-xs">
+                                        {previousLookup.get(key as string)?.[0]
+                                            ? countFormatter.format(parseInt(previousLookup.get(key as string)![0], 10))
+                                            : "—"}
+                                    </TableCell>
+                                    {item.length > 2 && item[2] !== undefined && (
+                                        <TableCell className="text-right min-w-16 text-muted-foreground text-xs">
+                                            {previousLookup.get(key as string)?.[1]
+                                                ? countFormatter.format(parseInt(previousLookup.get(key as string)![1], 10))
+                                                : "—"}
+                                        </TableCell>
+                                    )}
+                                </TableRow>
+                            )}
                             {renderAfterRow
                                 ? renderAfterRow(key as string)
                                 : null}

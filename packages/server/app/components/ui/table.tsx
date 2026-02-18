@@ -58,9 +58,9 @@ TableFooter.displayName = "TableFooter";
 
 const TableRow = React.forwardRef<
     HTMLTableRowElement,
-    React.HTMLAttributes<HTMLTableRowElement> & { width?: string } // Add 'width' property to the type definition
+    React.HTMLAttributes<HTMLTableRowElement> & { width?: string }
 >(({ className, ...props }, ref) => {
-    const { width } = props;
+    const { width, ...restProps } = props;
     return (
         <div
             ref={ref}
@@ -75,7 +75,7 @@ const TableRow = React.forwardRef<
                       }
                     : {}
             }
-            {...props}
+            {...restProps}
         />
     );
 });
