@@ -50,6 +50,7 @@ describe("Resources/Country route", () => {
                     [["US", "United States"], 1],
                 ],
                 page: 1,
+                previousCountsByProperty: null,
             });
         });
     });

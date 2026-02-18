@@ -52,6 +52,7 @@ describe("Resources/Browserversion route", () => {
                     ["116", 1],
                 ],
                 page: 1,
+                previousCountsByProperty: null,
             });
         });
     });

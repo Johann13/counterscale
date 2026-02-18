@@ -50,6 +50,7 @@ describe("Resources/Browser route", () => {
                     ["Firefox", 1],
                 ],
                 page: 1,
+                previousCountsByProperty: null,
             });
         });
     });

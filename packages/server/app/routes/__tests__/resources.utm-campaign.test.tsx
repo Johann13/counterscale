@@ -52,6 +52,7 @@ describe("Resources/UTM Campaign route", () => {
                     ["blog_post", 25],
                 ],
                 page: 1,
+                previousCountsByProperty: null,
             });
         });
     });

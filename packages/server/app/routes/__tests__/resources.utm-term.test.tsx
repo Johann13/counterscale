@@ -52,6 +52,7 @@ describe("Resources/UTM Term route", () => {
                     ["workout_clothes", 25],
                 ],
                 page: 1,
+                previousCountsByProperty: null,
             });
         });
     });

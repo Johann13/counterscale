@@ -52,6 +52,7 @@ describe("Resources/UTM Content route", () => {
                     ["footer_link", 20],
                 ],
                 page: 1,
+                previousCountsByProperty: null,
             });
         });
     });

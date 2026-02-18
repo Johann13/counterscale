@@ -50,6 +50,7 @@ describe("Resources/Device route", () => {
                     ["Mobile", 1],
                 ],
                 page: 1,
+                previousCountsByProperty: null,
             });
         });
     });

@@ -5,63 +5,56 @@ import type { LoaderFunctionArgs } from "react-router";
 
 import PaginatedTableCard from "~/components/PaginatedTableCard";
 
-import { paramsFromUrl, getFiltersFromSearchParams } from "~/lib/utils";
+import { loadWithComparison } from "~/lib/utils";
 import { SearchFilters } from "~/lib/types";
 
+function groupReferrersByDomain(
+    countsByProperty: [string, number, number][],
+): [string, number, number][] {
+    const domainMap = new Map<string, [string, number, number]>();
+    for (const [referrer, visitors, views] of countsByProperty) {
+        let domain: string;
+        try {
+            domain = new URL(
+                referrer.startsWith("http") ? referrer : `https://${referrer}`,
+            ).hostname;
+        } catch {
+            domain = referrer;
+        }
+        const existing = domainMap.get(domain);
+        if (existing) {
+            existing[1] += visitors;
+            existing[2] += views;
+        } else {
+            domainMap.set(domain, [domain, visitors, views]);
+        }
+    }
+    return Array.from(domainMap.values()).sort((a, b) => b[1] - a[1]);
+}
+
 export async function loader({ context, request }: LoaderFunctionArgs) {
-    const { analyticsEngine } = context;
-
-    const { interval, site, page = 1 } = paramsFromUrl(request.url);
-
     const url = new URL(request.url);
-    const tz = url.searchParams.get("timezone") || "UTC";
-    const filters = getFiltersFromSearchParams(url.searchParams);
     const groupByDomain = url.searchParams.get("groupByDomain") === "1";
 
-    const countsByProperty = await analyticsEngine.getCountByReferrer(
-        site,
-        interval,
-        tz,
-        filters,
-        Number(page),
+    const result = await loadWithComparison(
+        request,
+        (site, interval, tz, filters, page, startDate, endDate) =>
+            context.analyticsEngine.getCountByReferrer(
+                site, interval, tz, filters, page, startDate, endDate,
+            ),
     );
 
     if (groupByDomain) {
-        const domainMap = new Map<
-            string,
-            [string, number, number]
-        >();
-        for (const [referrer, visitors, views] of countsByProperty) {
-            let domain: string;
-            try {
-                domain = new URL(
-                    referrer.startsWith("http")
-                        ? referrer
-                        : `https://${referrer}`,
-                ).hostname;
-            } catch {
-                domain = referrer;
-            }
-            const existing = domainMap.get(domain);
-            if (existing) {
-                existing[1] += visitors;
-                existing[2] += views;
-            } else {
-                domainMap.set(domain, [domain, visitors, views]);
-            }
-        }
         return {
-            countsByProperty: Array.from(domainMap.values()).sort(
-                (a, b) => b[1] - a[1],
-            ),
-            page: Number(page),
+            ...result,
+            countsByProperty: groupReferrersByDomain(result.countsByProperty),
+            previousCountsByProperty: result.previousCountsByProperty
+                ? groupReferrersByDomain(result.previousCountsByProperty)
+                : null,
         };
     }
 
-    return {
-        countsByProperty,
-        page: Number(page),
-    };
+    return result;
 }
 
 export const ReferrerCard = ({

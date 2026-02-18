@@ -50,6 +50,7 @@ describe("Resources/City route", () => {
                     ["Munich", 20],
                 ],
                 page: 1,
+                previousCountsByProperty: null,
             });
         });
 
@@ -79,6 +80,7 @@ describe("Resources/City route", () => {
                     ["Los Angeles", 30],
                 ],
                 page: 1,
+                previousCountsByProperty: null,
             });
         });
     });

@@ -50,6 +50,7 @@ describe("Resources/Region route", () => {
                     ["Bavaria", 20],
                 ],
                 page: 1,
+                previousCountsByProperty: null,
             });
         });
 
@@ -79,6 +80,7 @@ describe("Resources/Region route", () => {
                     ["New York", 25],
                 ],
                 page: 1,
+                previousCountsByProperty: null,
             });
         });
     });

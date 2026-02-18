@@ -71,6 +71,7 @@ describe("Resources/Referrer route", () => {
                     ["/example", 1, 3],
                 ],
                 page: 1,
+                previousCountsByProperty: null,
             });
         });
     });

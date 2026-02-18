@@ -1,6 +1,6 @@
 import { useFetcher } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
-import { getFiltersFromSearchParams, paramsFromUrl } from "~/lib/utils";
+import { loadWithComparison } from "~/lib/utils";
 import PaginatedTableCard from "~/components/PaginatedTableCard";
 import { SearchFilters } from "~/lib/types";
 
@@ -13,41 +13,32 @@ function getCountryName(code: string): string {
     }
 }
 
-export async function loader({ context, request }: LoaderFunctionArgs) {
-    const { analyticsEngine } = context;
-    const { interval, site, page = 1 } = paramsFromUrl(request.url);
-    const url = new URL(request.url);
-    const tz = url.searchParams.get("timezone") || "UTC";
-    const filters = getFiltersFromSearchParams(url.searchParams);
-
-    const countsByRegionCity = await analyticsEngine.getCountByRegionCity(
-        site,
-        interval,
-        tz,
-        filters,
-    );
-
-    // Aggregate by region: split "region|city" and sum counts per region
+function aggregateByRegion(
+    countsByRegionCity: [string, number][],
+    page: number,
+): [string, number][] {
     const regionCounts = new Map<string, number>();
     for (const [packed, count] of countsByRegionCity) {
         const [region] = packed.split("|");
         if (!region) continue;
         regionCounts.set(region, (regionCounts.get(region) || 0) + count);
     }
-
-    // Sort by count descending
     const sorted = [...regionCounts.entries()].sort((a, b) => b[1] - a[1]);
-
-    // Server-side pagination (10 per page)
-    const pageNum = Number(page);
     const pageSize = 10;
-    const start = (pageNum - 1) * pageSize;
-    const paged = sorted.slice(start, start + pageSize);
+    const start = (page - 1) * pageSize;
+    return sorted.slice(start, start + pageSize);
+}
 
-    return {
-        countsByProperty: paged,
-        page: pageNum,
-    };
+export async function loader({ context, request }: LoaderFunctionArgs) {
+    return loadWithComparison(
+        request,
+        async (site, interval, tz, filters, page, startDate, endDate) => {
+            const raw = await context.analyticsEngine.getCountByRegionCity(
+                site, interval, tz, filters, 200, startDate, endDate,
+            );
+            return aggregateByRegion(raw, page);
+        },
+    );
 }
 
 export const RegionCard = ({

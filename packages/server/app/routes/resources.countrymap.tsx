@@ -16,7 +16,7 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
     const filters = getFiltersFromSearchParams(url.searchParams);
 
     const [countsByCountry, cityCoords] = await Promise.all([
-        analyticsEngine.getCountByCountry(site, interval, tz, filters, 1),
+        analyticsEngine.getVisitorCountByColumn(site, "country", interval, tz, filters, 1),
         analyticsEngine.getCountByCityWithCoordinates(
             site,
             interval,

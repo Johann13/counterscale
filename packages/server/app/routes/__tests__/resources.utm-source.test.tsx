@@ -52,6 +52,7 @@ describe("Resources/UTM Source route", () => {
                     ["twitter", 20],
                 ],
                 page: 1,
+                previousCountsByProperty: null,
             });
         });
 
@@ -74,6 +75,7 @@ describe("Resources/UTM Source route", () => {
             expect(json).toEqual({
                 countsByProperty: [],
                 page: 1,
+                previousCountsByProperty: null,
             });
         });
     });

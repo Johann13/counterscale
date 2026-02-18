@@ -75,6 +75,7 @@ describe("Resources/Paths route", () => {
                     ["/", 2, 7],
                 ],
                 page: 1,
+                previousCountsByProperty: null,
             });
         });
     });

@@ -52,6 +52,7 @@ describe("Resources/UTM Medium route", () => {
                     ["social", 25],
                 ],
                 page: 1,
+                previousCountsByProperty: null,
             });
         });
     });
