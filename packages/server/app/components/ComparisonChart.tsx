@@ -225,7 +225,10 @@ export default function ComparisonChart({
     }, [mergedData, visible.views, visible.visitors]);
 
     const xAxisTicks = useMemo(
-        () => mergedData.slice(1, -1).map((entry) => entry.label),
+        () =>
+            mergedData.length > 2
+                ? mergedData.slice(1, -1).map((entry) => entry.label)
+                : mergedData.map((entry) => entry.label),
         [mergedData],
     );
 
@@ -262,7 +265,7 @@ export default function ComparisonChart({
                             top: 10,
                             right: 30,
                             left: 0,
-                            bottom: 0,
+                            bottom: 24,
                         }}
                     >
                         <CartesianGrid strokeDasharray="3 3" />
@@ -358,17 +361,11 @@ export default function ComparisonChart({
             </div>
             <div className="flex gap-4 px-2 pt-1 text-xs text-muted-foreground">
                 <div className="flex items-center gap-1.5">
-                    <span className="inline-block w-4 h-0.5 bg-foreground" />
+                    <span className="inline-block w-4 h-2 rounded-sm bg-[#f96d3e]" />
                     Current period
                 </div>
                 <div className="flex items-center gap-1.5">
-                    <span
-                        className="inline-block w-4 h-0.5"
-                        style={{
-                            backgroundImage:
-                                "repeating-linear-gradient(to right, gray 0, gray 3px, transparent 3px, transparent 6px)",
-                        }}
-                    />
+                    <span className="inline-block w-4 h-2 rounded-sm bg-[#F9A98A] opacity-50" />
                     Previous period
                 </div>
             </div>
