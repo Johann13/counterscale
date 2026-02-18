@@ -72,8 +72,16 @@ export function intervalToSql(
             startIntervalSql = `toDateTime('${dayjs().tz(tz).startOf("day").utc().subtract(1, "day").format("YYYY-MM-DD HH:mm:ss")}')`;
             endIntervalSql = `toDateTime('${dayjs().tz(tz).startOf("day").utc().format("YYYY-MM-DD HH:mm:ss")}')`;
             break;
+        case "1h":
+        case "3h":
+        case "6h":
+        case "12h":
+            startIntervalSql = `toStartOfInterval(NOW() - INTERVAL '${interval.split("h")[0]}' HOUR, INTERVAL '${bucketIntervalMinutes}' MINUTE)`;
+            endIntervalSql = `toStartOfInterval(NOW(), INTERVAL '${bucketIntervalMinutes}' MINUTE)`;
+            break;
         case "1d":
         case "7d":
+        case "14d":
         case "30d":
         case "90d":
             startIntervalSql = `toStartOfInterval(NOW() - INTERVAL '${interval.split("d")[0]}' DAY, INTERVAL '${bucketIntervalMinutes}' MINUTE)`;

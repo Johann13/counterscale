@@ -97,11 +97,16 @@ export function getUserTimezone(): string {
 
 export function getIntervalType(interval: string): "DAY" | "HOUR" {
     switch (interval) {
+        case "1h":
+        case "3h":
+        case "6h":
+        case "12h":
         case "today":
         case "yesterday":
         case "1d":
             return "HOUR";
         case "7d":
+        case "14d":
         case "30d":
         case "90d":
             return "DAY";
@@ -119,6 +124,9 @@ export function getDateTimeRange(interval: string, tz: string) {
     } else if (interval === "yesterday") {
         localDateTime = localDateTime.tz(tz).startOf("day").subtract(1, "day");
         localEndDateTime = localDateTime.endOf("day").add(2, "ms");
+    } else if (interval.endsWith("h")) {
+        const hoursAgo = Number(interval.split("h")[0]);
+        localDateTime = localDateTime.subtract(hoursAgo, "hour").startOf("hour");
     } else {
         const daysAgo = Number(interval.split("d")[0]);
         const intervalType = getIntervalType(interval);

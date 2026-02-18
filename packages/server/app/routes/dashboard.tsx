@@ -228,10 +228,15 @@ export default function Dashboard() {
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
+                            <SelectItem value="1h">1 hour</SelectItem>
+                            <SelectItem value="3h">3 hours</SelectItem>
+                            <SelectItem value="6h">6 hours</SelectItem>
+                            <SelectItem value="12h">12 hours</SelectItem>
                             <SelectItem value="today">Today</SelectItem>
                             <SelectItem value="yesterday">Yesterday</SelectItem>
                             <SelectItem value="1d">24 hours</SelectItem>
                             <SelectItem value="7d">7 days</SelectItem>
+                            <SelectItem value="14d">14 days</SelectItem>
                             <SelectItem value="30d">30 days</SelectItem>
                             <SelectItem value="90d">90 days</SelectItem>
                         </SelectContent>
