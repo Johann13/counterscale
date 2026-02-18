@@ -1,4 +1,4 @@
-import { useState, memo } from "react";
+import { useState, useMemo, memo } from "react";
 import {
     ComposableMap,
     Geographies,
@@ -57,6 +57,56 @@ interface CityMarker {
     count: number;
 }
 
+interface ClusteredMarker {
+    lat: number;
+    lon: number;
+    totalCount: number;
+    entries: { name: string; count: number }[];
+}
+
+const CLUSTER_RADIUS = 8; // degrees at zoom=1
+
+function clusterMarkers(markers: CityMarker[], zoom: number): ClusteredMarker[] {
+    if (markers.length === 0) return [];
+
+    const sorted = [...markers].sort((a, b) => b.count - a.count);
+    const threshold = CLUSTER_RADIUS / zoom;
+    const clusters: ClusteredMarker[] = [];
+
+    for (const marker of sorted) {
+        let merged = false;
+        for (const cluster of clusters) {
+            const dLat = cluster.lat - marker.lat;
+            const dLon = cluster.lon - marker.lon;
+            const dist = Math.sqrt(dLat * dLat + dLon * dLon);
+            if (dist < threshold) {
+                // Weighted centroid
+                const totalCount = cluster.totalCount + marker.count;
+                cluster.lat =
+                    (cluster.lat * cluster.totalCount + marker.lat * marker.count) /
+                    totalCount;
+                cluster.lon =
+                    (cluster.lon * cluster.totalCount + marker.lon * marker.count) /
+                    totalCount;
+                cluster.totalCount = totalCount;
+                cluster.entries.push({ name: marker.city, count: marker.count });
+                merged = true;
+                break;
+            }
+        }
+        if (!merged) {
+            clusters.push({
+                lat: marker.lat,
+                lon: marker.lon,
+                totalCount: marker.count,
+                entries: [{ name: marker.city, count: marker.count }],
+            });
+        }
+    }
+
+    return clusters;
+}
+
 type MapMode = "countries" | "cities";
 
 interface WorldMapProps {
@@ -75,12 +125,17 @@ function WorldMapComponent({
     onCityClick,
 }: WorldMapProps) {
     const [tooltipContent, setTooltipContent] = useState<{
-        name: string;
-        count: number;
+        entries: { name: string; count: number }[];
+        totalCount: number;
         x: number;
         y: number;
     } | null>(null);
     const [zoom, setZoom] = useState(1);
+
+    const clusters = useMemo(
+        () => clusterMarkers(cityMarkers ?? [], zoom),
+        [cityMarkers, zoom],
+    );
 
     // Build a lookup from alpha-2 code to count
     const countByCode: Record<string, number> = {};
@@ -110,6 +165,7 @@ function WorldMapComponent({
                 className="w-full h-full"
             >
                 <ZoomableGroup
+                    maxZoom={20}
                     onMoveEnd={({ zoom: z }) => setZoom(z)}
                 >
                     <Geographies geography={GEO_URL}>
@@ -148,8 +204,8 @@ function WorldMapComponent({
                                             const name =
                                                 geo.properties.name || "Unknown";
                                             setTooltipContent({
-                                                name,
-                                                count,
+                                                entries: [{ name, count }],
+                                                totalCount: count,
                                                 x: evt.clientX,
                                                 y: evt.clientY,
                                             });
@@ -173,35 +229,36 @@ function WorldMapComponent({
                     </Geographies>
                     {mode === "cities" &&
                         (() => {
-                            const maxMarkerCount =
-                                cityMarkers?.reduce(
-                                    (max, m) => Math.max(max, m.count),
-                                    1,
-                                ) ?? 1;
-                            return cityMarkers?.map((marker) => {
+                            const maxMarkerCount = clusters.reduce(
+                                (max, c) => Math.max(max, c.totalCount),
+                                1,
+                            );
+                            return clusters.map((cluster, i) => {
+                                const isSingle = cluster.entries.length === 1;
                                 const baseRadius =
                                     2 +
-                                    (6 * Math.log(marker.count + 1)) /
+                                    (6 * Math.log(cluster.totalCount + 1)) /
                                         Math.log(maxMarkerCount + 1);
-                                const radius = baseRadius / zoom;
+                                const radius = baseRadius / Math.pow(zoom, 0.7);
+                                const opacity = isSingle ? 0.7 : 0.85;
                                 return (
                                     <Marker
-                                        key={`${marker.city}-${marker.lat}-${marker.lon}`}
+                                        key={`cluster-${i}-${cluster.lat}-${cluster.lon}`}
                                         coordinates={[
-                                            marker.lon,
-                                            marker.lat,
+                                            cluster.lon,
+                                            cluster.lat,
                                         ]}
                                     >
                                         <circle
                                             r={radius}
-                                            fill="rgba(244, 106, 61, 0.7)"
+                                            fill={`rgba(244, 106, 61, ${opacity})`}
                                             stroke="#fff"
-                                            strokeWidth={0.5 / zoom}
+                                            strokeWidth={0.5 / Math.pow(zoom, 0.7)}
                                             style={{ cursor: "pointer" }}
                                             onMouseEnter={(evt) => {
                                                 setTooltipContent({
-                                                    name: marker.city,
-                                                    count: marker.count,
+                                                    entries: cluster.entries,
+                                                    totalCount: cluster.totalCount,
                                                     x: evt.clientX,
                                                     y: evt.clientY,
                                                 });
@@ -210,9 +267,25 @@ function WorldMapComponent({
                                                 setTooltipContent(null);
                                             }}
                                             onClick={() => {
-                                                onCityClick?.(marker.city);
+                                                if (isSingle && onCityClick) {
+                                                    onCityClick(cluster.entries[0].name);
+                                                }
                                             }}
                                         />
+                                        {!isSingle && (
+                                            <text
+                                                textAnchor="middle"
+                                                dominantBaseline="central"
+                                                style={{
+                                                    fontSize: `${Math.max(3 / Math.pow(zoom, 0.7), radius * 0.9)}px`,
+                                                    fill: "#fff",
+                                                    fontWeight: 600,
+                                                    pointerEvents: "none",
+                                                }}
+                                            >
+                                                {cluster.entries.length}
+                                            </text>
+                                        )}
                                     </Marker>
                                 );
                             });
@@ -227,16 +300,51 @@ function WorldMapComponent({
                         top: tooltipContent.y - 40,
                     }}
                 >
-                    <Card className="p-2 shadow-lg leading-normal">
-                        <div className="font-semibold">
-                            {tooltipContent.name}
-                        </div>
-                        <div>
-                            {Intl.NumberFormat("en", {
-                                notation: "compact",
-                            }).format(tooltipContent.count)}{" "}
-                            visitors
-                        </div>
+                    <Card className="p-2 shadow-lg leading-normal max-h-48 overflow-y-auto">
+                        {tooltipContent.entries.length === 1 ? (
+                            <>
+                                <div className="font-semibold">
+                                    {tooltipContent.entries[0].name}
+                                </div>
+                                <div>
+                                    {Intl.NumberFormat("en", {
+                                        notation: "compact",
+                                    }).format(tooltipContent.totalCount)}{" "}
+                                    visitors
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <div className="font-semibold mb-1">
+                                    {tooltipContent.entries.length} cities &middot;{" "}
+                                    {Intl.NumberFormat("en", {
+                                        notation: "compact",
+                                    }).format(tooltipContent.totalCount)}{" "}
+                                    visitors
+                                </div>
+                                {tooltipContent.entries
+                                    .sort((a, b) => b.count - a.count)
+                                    .slice(0, 10)
+                                    .map((entry) => (
+                                        <div
+                                            key={entry.name}
+                                            className="text-sm flex justify-between gap-3"
+                                        >
+                                            <span>{entry.name}</span>
+                                            <span className="text-muted-foreground">
+                                                {Intl.NumberFormat("en", {
+                                                    notation: "compact",
+                                                }).format(entry.count)}
+                                            </span>
+                                        </div>
+                                    ))}
+                                {tooltipContent.entries.length > 10 && (
+                                    <div className="text-sm text-muted-foreground mt-1">
+                                        +{tooltipContent.entries.length - 10} more
+                                    </div>
+                                )}
+                            </>
+                        )}
                     </Card>
                 </div>
             )}
