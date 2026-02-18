@@ -238,7 +238,7 @@ export default function ComparisonChart({
 
     return (
         <div className="h-full w-full flex flex-col">
-            <div className="flex gap-4 px-2 pb-2">
+            <div className="flex justify-end gap-4 px-2 pb-2">
                 {legendItems.map(({ key, label, color }) => (
                     <button
                         key={key}
