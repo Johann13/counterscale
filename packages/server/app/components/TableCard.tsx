@@ -11,6 +11,36 @@ import {
 
 type CountByProperty = [string, string, string?][];
 
+function ComparisonIndicator({
+    current,
+    previous,
+}: {
+    current: number;
+    previous: string | undefined;
+}) {
+    if (previous === undefined) {
+        return <div className="text-xs text-muted-foreground">—</div>;
+    }
+    const prev = parseInt(previous, 10);
+    if (isNaN(prev) || (prev === 0 && current === 0)) {
+        return <div className="text-xs text-muted-foreground">0%</div>;
+    }
+    if (prev === 0) {
+        return <div className="text-xs text-green-600">+∞</div>;
+    }
+    const pctChange = ((current - prev) / prev) * 100;
+    const sign = pctChange > 0 ? "+" : "";
+    let color = "text-muted-foreground";
+    if (pctChange > 0) color = "text-green-600";
+    else if (pctChange < 0) color = "text-red-600";
+    return (
+        <div className={`text-xs ${color}`}>
+            {sign}
+            {Math.round(pctChange)}%
+        </div>
+    );
+}
+
 function calculateCountPercentages(countByProperty: CountByProperty) {
     const totalCount = countByProperty.reduce(
         (sum, row) => sum + parseInt(row[1]),
@@ -30,6 +60,7 @@ export default function TableCard({
     labelFormatter,
     renderAfterRow,
     rowIcon,
+    previousCountByProperty,
 }: {
     countByProperty: CountByProperty;
     columnHeaders: string[];
@@ -37,10 +68,21 @@ export default function TableCard({
     labelFormatter?: (label: string) => string;
     renderAfterRow?: (key: string) => ReactNode;
     rowIcon?: (key: string) => ReactNode;
+    previousCountByProperty?: CountByProperty | null;
 }) {
     const barChartPercentages = calculateCountPercentages(countByProperty);
 
     const countFormatter = Intl.NumberFormat("en", { notation: "compact" });
+
+    // Build lookup from previous period data: label → [count1, count2?]
+    const previousLookup = new Map<string, string[]>();
+    if (previousCountByProperty) {
+        for (const item of previousCountByProperty) {
+            const desc = item[0];
+            const key = Array.isArray(desc) ? desc[0] : desc;
+            previousLookup.set(key as string, item.slice(1) as string[]);
+        }
+    }
 
     const gridCols =
         (columnHeaders || []).length === 3
@@ -145,15 +187,23 @@ export default function TableCard({
                                 </TableCell>
 
                                 <TableCell className="text-right min-w-16">
-                                    {countFormatter.format(
-                                        parseInt(item[1], 10),
+                                    <div>{countFormatter.format(parseInt(item[1], 10))}</div>
+                                    {previousCountByProperty && (
+                                        <ComparisonIndicator
+                                            current={parseInt(item[1], 10)}
+                                            previous={previousLookup.get(key as string)?.[0]}
+                                        />
                                     )}
                                 </TableCell>
 
                                 {item.length > 2 && item[2] !== undefined && (
                                     <TableCell className="text-right min-w-16">
-                                        {countFormatter.format(
-                                            parseInt(item[2], 10),
+                                        <div>{countFormatter.format(parseInt(item[2], 10))}</div>
+                                        {previousCountByProperty && (
+                                            <ComparisonIndicator
+                                                current={parseInt(item[2], 10)}
+                                                previous={previousLookup.get(key as string)?.[1]}
+                                            />
                                         )}
                                     </TableCell>
                                 )}
