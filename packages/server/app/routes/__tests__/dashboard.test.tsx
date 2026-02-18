@@ -342,6 +342,16 @@ describe("Dashboard route", () => {
                             return { countsByProperty: [] };
                         },
                     },
+                    {
+                        path: "/resources/comparison",
+                        loader: () => {
+                            return {
+                                currentData: [],
+                                previousData: [],
+                                intervalType: "DAY",
+                            };
+                        },
+                    },
                 ],
             },
         ]);
@@ -531,6 +541,16 @@ describe("Dashboard route", () => {
                         path: "/resources/city",
                         loader: () => {
                             return { countsByProperty: [] };
+                        },
+                    },
+                    {
+                        path: "/resources/comparison",
+                        loader: () => {
+                            return {
+                                currentData: [],
+                                previousData: [],
+                                intervalType: "DAY",
+                            };
                         },
                     },
                 ],

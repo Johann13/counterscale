@@ -145,6 +145,15 @@ export function getDateTimeRange(interval: string, tz: string) {
     };
 }
 
+export function getPreviousPeriodDateRange(interval: string, tz: string) {
+    const { startDate, endDate } = getDateTimeRange(interval, tz);
+    const periodMs = endDate.getTime() - startDate.getTime();
+    return {
+        startDate: new Date(startDate.getTime() - periodMs),
+        endDate: new Date(endDate.getTime() - periodMs),
+    };
+}
+
 export function maskBrowserVersion(version?: string) {
     if (!version) return version;
 

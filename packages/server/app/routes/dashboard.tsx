@@ -49,6 +49,7 @@ import {
 import { SearchFilters } from "~/lib/types";
 import SearchFilterBadges from "~/components/SearchFilterBadges";
 import { TimeSeriesCard } from "./resources.timeseries";
+import { ComparisonCard } from "./resources.comparison";
 import { StatsCard } from "./resources.stats";
 import { requireAuth } from "~/lib/auth";
 
@@ -258,6 +259,14 @@ export default function Dashboard() {
                 </div>
                 <div className="w-full mb-4">
                     <TimeSeriesCard
+                        siteId={data.siteId}
+                        interval={data.interval}
+                        filters={data.filters}
+                        timezone={userTimezone}
+                    />
+                </div>
+                <div className="w-full mb-4">
+                    <ComparisonCard
                         siteId={data.siteId}
                         interval={data.interval}
                         filters={data.filters}
